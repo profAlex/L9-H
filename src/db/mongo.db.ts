@@ -4,6 +4,8 @@ import { PostViewModel } from "../routers/router-types/post-view-model";
 import { UserCollectionStorageModel } from "../routers/router-types/user-storage-model";
 import { CommentStorageModel } from "../routers/router-types/comment-storage-model";
 import { RefreshTokensStorageModel } from "../routers/router-types/refresh-tokens-storage-model";
+import { SessionStorageModel } from "../routers/router-types/auth-SessionStorageModel";
+import { RequestRestrictionStorageModel } from "../routers/router-types/auth-RequestRestrictionStorageModel";
 
 const DB_NAME = "bloggers_db";
 export const BLOGGERS_COLLECTION_NAME = "bloggers_collection";
@@ -11,6 +13,9 @@ export const POSTS_COLLECTION_NAME = "posts_collection";
 export const USERS_COLLECTION_NAME = "users_collection";
 export const COMMENTS_COLLECTION_NAME = "comments_collection";
 export const REFRESH_TOKENS_COLLECTION_NAME = "refresh_tokens_collection";
+
+export const SESSIONS_COLLECTION_NAME = "sessions_collection";
+export const REQUESTS_RESTRICTIONS_COLLECTION_NAME = "requests_restrictions_collection";
 
 const URI =
     "mongodb+srv://admin:admin@learningcluster.f1zm90x.mongodb.net/?retryWrites=true&w=majority&appName=LearningCluster";
@@ -24,6 +29,9 @@ export let postsCollection: Collection<PostViewModel>;
 export let usersCollection: Collection<UserCollectionStorageModel>;
 export let commentsCollection: Collection<CommentStorageModel>;
 export let refreshTokensBlackListCollection: Collection<RefreshTokensStorageModel>;
+
+export let sessionsDataStorage: Collection<SessionStorageModel>;
+export let requestsRestrictionDataStorage: Collection<RequestRestrictionStorageModel>;
 
 export async function runDB() {
     client = new MongoClient(URI);
@@ -48,6 +56,8 @@ export async function runDB() {
             expireAfterSeconds: 86400, // считается в секундах, т.е. 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         },
     );
+    sessionsDataStorage = db.collection<SessionStorageModel>(SESSIONS_COLLECTION_NAME);
+    requestsRestrictionDataStorage = db.collection<RequestRestrictionStorageModel>(REQUESTS_RESTRICTIONS_COLLECTION_NAME);
 
     try {
         await client.connect();
