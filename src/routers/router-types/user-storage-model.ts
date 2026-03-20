@@ -10,5 +10,4 @@ import { User } from "../../common/classes/user-class";
 //     createdAt: Date
 // }
 
-
 export interface UserCollectionStorageModel extends User{};

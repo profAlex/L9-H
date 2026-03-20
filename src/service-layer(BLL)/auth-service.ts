@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from "express";
 import { dataQueryRepository } from "../repository-layers/query-repository-layer/query-repository";
 import { bcryptService } from "../adapters/authentication/bcrypt-service";
 import { jwtService } from "../adapters/verification/jwt-service";
@@ -16,12 +17,17 @@ import {
 } from "../adapters/email-sender/mailer-service";
 import { RotationPairToken } from "../adapters/verification/auth-token-rotation-pair";
 import { createTokenPair } from "../adapters/verification/utility-token-pairs-creation";
+import { RequestWithBody } from "../routers/request-types/request-types";
+import { AuthLoginInputModel } from "../routers/router-types/auth-login-input-model";
+import { UserSession } from "../common/classes/session-class";
 
 export const authService = {
     async loginUser(
-        loginOrEmail: string,
-        password: string,
+        req: RequestWithBody<AuthLoginInputModel>,
+        res: Response,
     ): Promise<CustomResult<RotationPairToken>> {
+
+        const { loginOrEmail, password } = req.body;
         const user = await dataQueryRepository.findByLoginOrEmail(loginOrEmail);
 
         if (!user)
@@ -70,49 +76,27 @@ export const authService = {
             };
         }
 
-        // // пробуем создать accessToken
-        // const resCreatingAccessToken = await jwtService.createAccessToken({
-        //     userId: user.id,
-        // });
-        // if (!resCreatingAccessToken.data?.accessToken) {
-        //     console.error(resCreatingAccessToken.statusDescription);
-        //     return {
-        //         data: null,
-        //         statusCode: resCreatingAccessToken.statusCode,
-        //         statusDescription: resCreatingAccessToken.statusDescription,
-        //         errorsMessages: resCreatingAccessToken.errorsMessages,
-        //     };
-        // }
-        //
-        // // пробуем создать refreshToken
-        // const resCreatingRefreshToken = await jwtService.createRefreshToken({
-        //     userId: user.id,
-        // });
-        // if (!resCreatingRefreshToken.data?.refreshToken) {
-        //     console.error(resCreatingRefreshToken.statusDescription);
-        //     return {
-        //         data: null,
-        //         statusCode: resCreatingAccessToken.statusCode,
-        //         statusDescription: resCreatingAccessToken.statusDescription,
-        //         errorsMessages: resCreatingAccessToken.errorsMessages,
-        //     };
-        // }
-        //
-        // return {
-        //     data: {
-        //         accessToken: resCreatingAccessToken.data.accessToken,
-        //         refreshToken: resCreatingRefreshToken.data.refreshToken,
-        //         relatedUserId: user.id,
-        //     },
-        //     statusCode: HttpStatus.Ok,
-        //     statusDescription: "",
-        //     errorsMessages: [
-        //         {
-        //             field: "",
-        //             message: "",
-        //         },
-        //     ],
-        // };
+
+        // создаем мета данные для сессии
+        const sessionObjectId = new ObjectId();
+        const userAgent = req.get('User-Agent') || ""; // или req.headers['user-agent']
+        const deviceIp = req.ip || "";
+
+        // создаем объект сессии
+        const tempSession = new UserSession(sessionObjectId, user.id, userAgent, deviceIp);
+        
+        // создать отдельные методы в dataCommandRepository для:
+        // - поиска имеющейся сессии
+        // - создания новой сессии
+        // - продления имеющейся сессии
+
+        // здесь логика у нас следующая
+        // - ищем есть ли сессия
+        // - если есть то продляем
+        // - если нет то создаем новую
+        // Во всех случаях возвращаем данные для создания пары токенов
+
+        const {issuedAt, expiresAt, deviceId} = await dataCommandRepository.manageSession;
 
         const pairOfToken = await createTokenPair(user.id);
         if (!pairOfToken.data) {

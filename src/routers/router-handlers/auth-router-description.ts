@@ -21,9 +21,9 @@ export const attemptToLogin = async (
     req: RequestWithBody<AuthLoginInputModel>,
     res: Response,
 ) => {
-    const { loginOrEmail, password } = req.body;
+
     const loginResult: CustomResult<RotationPairToken> =
-        await authService.loginUser(loginOrEmail, password);
+        await authService.loginUser(req, res);
 
     if (!loginResult.data) {
         console.error(
