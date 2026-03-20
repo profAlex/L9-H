@@ -7,8 +7,9 @@ import {
     postsCollection,
     usersCollection,
     refreshTokensBlackListCollection,
+    sessionsDataStorage,
 } from "../../db/mongo.db";
-import { ObjectId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { BlogPostInputModel } from "../../routers/router-types/blog-post-input-model";
 import { CustomError } from "../utility/custom-error-class";
 import { UserInputModel } from "../../routers/router-types/user-input-model";
@@ -28,6 +29,8 @@ import { RegistrationConfirmationInput } from "../../routers/router-types/auth-r
 import { ResentRegistrationConfirmationInput } from "../../routers/router-types/auth-resent-registration-confirmation-input-model";
 import { randomUUID } from "node:crypto";
 import { RefreshTokenModel } from "../../adapters/verification/auth-refresh-token-model";
+import { UserSession } from "../../common/classes/session-class";
+import { SessionStorageModel } from "../../routers/router-types/auth-SessionStorageModel";
 
 export type BloggerCollectionStorageModel = {
     _id: ObjectId;
@@ -1155,16 +1158,20 @@ export const dataCommandRepository = {
         refreshTokenInfo: RefreshTokenModel,
     ): Promise<boolean> {
         try {
-            const result = await refreshTokensBlackListCollection.insertOne(
-                refreshTokenInfo ,
-            );
+            const result =
+                await refreshTokensBlackListCollection.insertOne(
+                    refreshTokenInfo,
+
+                );
             return !!result;
         } catch (error) {
-            console.error("Unknown error during addRefreshTokenInfoToBlackList", error);
+            console.error(
+                "Unknown error during addRefreshTokenInfoToBlackList",
+                error,
+            );
             return false;
         }
     },
-
 
     async checkIfRefreshTokenInBlackList(
         refreshToken: string,
@@ -1176,8 +1183,69 @@ export const dataCommandRepository = {
             );
             return !!result;
         } catch (error) {
-            console.error("Unknown error during checkIfRefreshTokenInBlackList", error);
+            console.error(
+                "Unknown error during checkIfRefreshTokenInBlackList",
+                error,
+            );
             return false;
+        }
+    },
+
+    // *****************************
+    // методы для управления сессиями
+    // *****************************
+
+    // export type SessionStorageModel = {
+    //     userId: string;
+    //     deviceId: string;
+    //     issuedAt: Date;
+    //     deviceName: string;
+    //     deviceIp: string;
+    //     expiresAt: Date;
+    // }
+
+    async findSession(sessionDto: UserSession): Promise<ObjectId | null> {
+        try {
+            const session:WithId<SessionStorageModel> | null = await sessionsDataStorage.findOne(
+                {
+                    userId: sessionDto.userId,
+                    deviceId: sessionDto.deviceId,
+                    deviceName: sessionDto.deviceName,
+                },
+                { projection: { _id: 1 } },
+            );
+
+            return session ? session._id : null;
+        } catch(error) {
+            console.error(
+                "Unknown error during findSession",
+                error,
+            );
+
+            return null;
+        }
+    },
+
+
+    async updateSession(sessionDto: UserSession, sessionIndexId: ObjectId): Promise<ObjectId | null> {
+        try {
+            const session:WithId<SessionStorageModel> | null = await sessionsDataStorage.findOne(
+                {
+                    userId: sessionDto.userId,
+                    deviceId: sessionDto.deviceId,
+                    deviceName: sessionDto.deviceName,
+                },
+                { projection: { _id: 1 } },
+            );
+
+            return session ? session._id : null;
+        } catch(error) {
+            console.error(
+                "Unknown error during findSession",
+                error,
+            );
+
+            return null;
         }
     },
 

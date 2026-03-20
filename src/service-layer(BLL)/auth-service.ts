@@ -79,12 +79,17 @@ export const authService = {
 
         // создаем мета данные для сессии
         const sessionObjectId = new ObjectId();
-        const userAgent = req.get('User-Agent') || ""; // или req.headers['user-agent']
+        const userAgent = req.get('User-Agent') || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
         const deviceIp = req.ip || "";
 
         // создаем объект сессии
         const tempSession = new UserSession(sessionObjectId, user.id, userAgent, deviceIp);
-        
+
+        // что еще надо:
+        гарантировать iat в пэйлоад да и эксп тоже
+        затем добавить индексацию в монго дб через поле createdAt и проверить что оно везде проскакивает насковь
+        затем уже добавить TTL для хранилища сессий - это нужно для того чтобы удалять протухшие сессии к которым никто не обращался
+
         // создать отдельные методы в dataCommandRepository для:
         // - поиска имеющейся сессии
         // - создания новой сессии
@@ -344,10 +349,13 @@ export const authService = {
             };
         }
 
+        const createdAtOldToken = await jwtService.decodeToken(refreshToken);
+
         const ifSucessfullyAddedToBlackList =
             await dataCommandRepository.addRefreshTokenInfoToBlackList({
                 refreshToken: refreshToken,
                 relatedUserId: userId,
+                createdAt: createdAtOldToken?.iat
             });
 
         if (!ifSucessfullyAddedToBlackList) {
