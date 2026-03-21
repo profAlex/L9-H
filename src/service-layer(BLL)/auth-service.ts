@@ -1,12 +1,14 @@
-import { NextFunction, Request, Response } from "express";
+import { Response } from "express";
 import { dataQueryRepository } from "../repository-layers/query-repository-layer/query-repository";
 import { bcryptService } from "../adapters/authentication/bcrypt-service";
 import { jwtService } from "../adapters/verification/jwt-service";
 import { CustomResult } from "../common/result-type/result-type";
 import { HttpStatus } from "../common/http-statuses/http-statuses";
-import { AccessTokenModel } from "../adapters/verification/auth-access-token-model";
 import { RegistrationUserInputModel } from "../routers/router-types/auth-registration-input-model";
-import { dataCommandRepository } from "../repository-layers/command-repository-layer/command-repository";
+import {
+    dataCommandRepository,
+    findSessionByPrimaryKey,
+} from "../repository-layers/command-repository-layer/command-repository";
 import { RegistrationConfirmationInput } from "../routers/router-types/auth-registration-confirmation-input-model";
 import { ResentRegistrationConfirmationInput } from "../routers/router-types/auth-resent-registration-confirmation-input-model";
 import { ObjectId } from "mongodb";
@@ -20,13 +22,13 @@ import { createTokenPair } from "../adapters/verification/utility-token-pairs-cr
 import { RequestWithBody } from "../routers/request-types/request-types";
 import { AuthLoginInputModel } from "../routers/router-types/auth-login-input-model";
 import { UserSession } from "../common/classes/session-class";
+import { envConfig } from "../config";
 
 export const authService = {
     async loginUser(
         req: RequestWithBody<AuthLoginInputModel>,
         res: Response,
     ): Promise<CustomResult<RotationPairToken>> {
-
         const { loginOrEmail, password } = req.body;
         const user = await dataQueryRepository.findByLoginOrEmail(loginOrEmail);
 
@@ -76,19 +78,25 @@ export const authService = {
             };
         }
 
-
         // создаем мета данные для сессии
         const sessionObjectId = new ObjectId();
-        const userAgent = req.get('User-Agent') || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
+        const userAgent = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
         const deviceIp = req.ip || "";
 
         // создаем объект сессии
-        const tempSession = new UserSession(sessionObjectId, user.id, userAgent, deviceIp);
+        const tempSession = new UserSession(
+            sessionObjectId,
+            user.id,
+            userAgent,
+            deviceIp,
+        );
+        const sessionIat = tempSession.issuedAt;
+        const sessionExp = tempSession.expiresAt;
+        const sessionDeviceId = tempSession.deviceId;
 
         // что еще надо:
-        гарантировать iat в пэйлоад да и эксп тоже
-        затем добавить индексацию в монго дб через поле createdAt и проверить что оно везде проскакивает насковь
-        затем уже добавить TTL для хранилища сессий - это нужно для того чтобы удалять протухшие сессии к которым никто не обращался
+        // гарантировать iat и exp в пэйлоад jwt-token
+        // затем уже добавить TTL для хранилища сессий - это нужно для того чтобы удалять протухшие сессии к которым никто не обращался
 
         // создать отдельные методы в dataCommandRepository для:
         // - поиска имеющейся сессии
@@ -96,14 +104,39 @@ export const authService = {
         // - продления имеющейся сессии
 
         // здесь логика у нас следующая
-        // - ищем есть ли сессия
-        // - если есть то продляем
-        // - если нет то создаем новую
+        // - в любом случае создаем новую сессию со всеми присущими определенными идентификаторами и параметрами
+
         // Во всех случаях возвращаем данные для создания пары токенов
 
-        const {issuedAt, expiresAt, deviceId} = await dataCommandRepository.manageSession;
+        // создаем сессию в базе
+        const isSuccessfulSessionCreated =
+            await dataCommandRepository.createSession(tempSession);
 
-        const pairOfToken = await createTokenPair(user.id);
+        if (!isSuccessfulSessionCreated) {
+            console.error(
+                "Error inside loginUser -> dataCommandRepository.createSession(tempSession)",
+            );
+            return {
+                data: null,
+                statusCode: HttpStatus.InternalServerError,
+                statusDescription:
+                    "Error inside loginUser -> dataCommandRepository.createSession(tempSession)",
+                errorsMessages: [
+                    {
+                        field: "dataCommandRepository.createSession(tempSession)",
+                        message: "Error while creating session",
+                    },
+                ],
+            };
+        }
+
+        // создаем пару токенов
+        const pairOfToken = await createTokenPair(
+            user.id,
+            sessionIat,
+            sessionExp,
+            sessionDeviceId,
+        );
         if (!pairOfToken.data) {
             console.error(pairOfToken.statusDescription);
             return {
@@ -333,12 +366,54 @@ export const authService = {
         }
     },
 
-    // генерирует и возвращает два токена, помещает токен в блэклист
+    // обновляет сессию, генерирует и возвращает два токена
     async refreshTokenOnDemand(
-        refreshToken: string,
+        // refreshToken: string,
         userId: string,
+        sessionId: ObjectId,
     ): Promise<CustomResult<RotationPairToken>> {
-        const pairOfToken = await createTokenPair(userId);
+        const sessionData = await findSessionByPrimaryKey(sessionId);
+
+        // формируем новые даты exp и iat
+        const currentTimeMs = Date.now();
+        // Преобразуем в секунды с округлением вниз
+        const timestampSeconds = Math.floor(currentTimeMs / 1000);
+        // Создаём Date из округлённых секунд (будет кратно 1000 мс)
+        const issuedAt = new Date(timestampSeconds * 1000);
+
+        // Устанавливаем expiresAt на основе той же базовой временной метки
+        const expiresAt = new Date(
+            issuedAt.getTime() + envConfig.refreshTokenLifetime * 1000,
+        );
+
+        // обновляем данные в базе сессий
+        const isSessionUpdated = await dataCommandRepository.updateSession(expiresAt, issuedAt, sessionId);
+        if(!isSessionUpdated) {
+            console.error(
+                "Couldn't update session data",
+            );
+            return {
+                data: null,
+                statusCode: HttpStatus.InternalServerError,
+                statusDescription:
+                    "Couldn't update session data",
+                errorsMessages: [
+                    {
+                        field: "authService -> refreshTokenOnDemand -> dataCommandRepository.updateSession(expiresAt, issuedAt, sessionId)",
+                        message:
+                            "Couldn't update session data",
+                    },
+                ],
+            };
+        }
+
+        // создаем новые токены
+        const pairOfToken = await createTokenPair(
+            userId, // тоже что и sessionData!.userId,
+            issuedAt,
+            expiresAt,
+            sessionData!.deviceId,
+        );
         if (!pairOfToken.data) {
             console.error(pairOfToken.statusDescription);
             return {
@@ -349,45 +424,51 @@ export const authService = {
             };
         }
 
-        const createdAtOldToken = await jwtService.decodeToken(refreshToken);
-
-        const ifSucessfullyAddedToBlackList =
-            await dataCommandRepository.addRefreshTokenInfoToBlackList({
-                refreshToken: refreshToken,
-                relatedUserId: userId,
-                createdAt: createdAtOldToken?.iat
-            });
-
-        if (!ifSucessfullyAddedToBlackList) {
-            console.error("Couldn't insert outdated refresh token into the blacklist");
-            return {
-                data: null,
-                statusCode: HttpStatus.InternalServerError,
-                statusDescription:
-                    "Couldn't insert outdated refresh token into the blacklist",
-                errorsMessages: [
-                    {
-                        field: "authService -> refreshTokenOnDemand -> if (!ifSucessfullyAddedToBlackList)",
-                        message: "Couldn't insert outdated refresh token into the blacklist",
-                    },
-                ],
-            };
-        }
+        // const createdAtOldToken =
+        //     await jwtService.decodeRefreshToken(refreshToken);
+        //
+        // const ifSucessfullyAddedToBlackList =
+        //     await dataCommandRepository.addRefreshTokenInfoToBlackList({
+        //         refreshToken: refreshToken,
+        //         relatedUserId: userId,
+        //         createdAt: createdAtOldToken?.iat,
+        //     });
+        //
+        // if (!ifSucessfullyAddedToBlackList) {
+        //     console.error(
+        //         "Couldn't insert outdated refresh token into the blacklist",
+        //     );
+        //     return {
+        //         data: null,
+        //         statusCode: HttpStatus.InternalServerError,
+        //         statusDescription:
+        //             "Couldn't insert outdated refresh token into the blacklist",
+        //         errorsMessages: [
+        //             {
+        //                 field: "authService -> refreshTokenOnDemand -> if (!ifSucessfullyAddedToBlackList)",
+        //                 message:
+        //                     "Couldn't insert outdated refresh token into the blacklist",
+        //             },
+        //         ],
+        //     };
+        // }
 
         return pairOfToken;
     },
 
-
-    async logoutOnDemand(oldRefreshToken: string, relatedUserId: string,): Promise<boolean> {
-        const ifSucessfullyAddedToBlackList =
-            await dataCommandRepository.addRefreshTokenInfoToBlackList({
-                refreshToken: oldRefreshToken,
-                relatedUserId: relatedUserId,
-            });
+    async logoutOnDemand(
+        // oldRefreshToken: string,
+        relatedUserId: string,
+        sessionId: ObjectId,
+    ): Promise<boolean> {
+        // const ifSucessfullyAddedToBlackList =
+        //     await dataCommandRepository.addRefreshTokenInfoToBlackList({
+        //         refreshToken: oldRefreshToken,
+        //         relatedUserId: relatedUserId,
+        //     });
 
         return ifSucessfullyAddedToBlackList;
     },
-
 
     // вспомогательная функция
     async checkUserCredentials(

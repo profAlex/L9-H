@@ -6,6 +6,7 @@ import { CommentStorageModel } from "../routers/router-types/comment-storage-mod
 import { RefreshTokensStorageModel } from "../routers/router-types/refresh-tokens-storage-model";
 import { SessionStorageModel } from "../routers/router-types/auth-SessionStorageModel";
 import { RequestRestrictionStorageModel } from "../routers/router-types/auth-RequestRestrictionStorageModel";
+import { envConfig } from "../config";
 
 const DB_NAME = "bloggers_db";
 export const BLOGGERS_COLLECTION_NAME = "bloggers_collection";
@@ -48,15 +49,25 @@ export async function runDB() {
     refreshTokensBlackListCollection = db.collection<RefreshTokensStorageModel>(
         REFRESH_TOKENS_COLLECTION_NAME,
     );
+
     // настройка автоудаления токенов
     await refreshTokensBlackListCollection.createIndex(
-        { refreshToken: 1 }, // поле для индексации
+        { createdAt: 1 }, // поле для индексации
         {
             // unique: true,  // это лишнее, не ускоряет поиск по индексированному полю, это просто встроенная провекра на уникальность, для нашего случая помоему излишне
             expireAfterSeconds: 86400, // считается в секундах, т.е. 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         },
     );
+
+    // настройка автоудаления сессий
     sessionsDataStorage = db.collection<SessionStorageModel>(SESSIONS_COLLECTION_NAME);
+    await sessionsDataStorage.createIndex(
+        { createdAt: 1 }, // поле для индексации
+        {
+            expireAfterSeconds: envConfig.refreshTokenLifetime, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+        },
+    );
+
     requestsRestrictionDataStorage = db.collection<RequestRestrictionStorageModel>(REQUESTS_RESTRICTIONS_COLLECTION_NAME);
 
     try {

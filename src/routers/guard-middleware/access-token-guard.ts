@@ -1,11 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import {
-    RequestWithParamsAndBodyAndUserId,
-    RequestWithUserId,
-} from "../request-types/request-types";
-import { UserIdType } from "../router-types/user-id-type";
 import { HttpStatus } from "../../common/http-statuses/http-statuses";
-import { JwtPayloadType } from "../../adapters/verification/payload-type";
+import { JwtAccessPayloadType } from "../../adapters/verification/payload-type";
 import { jwtService } from "../../adapters/verification/jwt-service";
 
 export const accessTokenGuard = async (
@@ -24,7 +19,7 @@ export const accessTokenGuard = async (
         });
 
     const sentAccessToken = req.headers.authorization.split(" ")[1];
-    const payload: JwtPayloadType | null =
+    const payload: JwtAccessPayloadType | null =
         await jwtService.verifyAccessToken(sentAccessToken);
 
     if (!payload)

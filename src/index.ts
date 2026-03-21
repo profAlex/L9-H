@@ -5,6 +5,7 @@ import { envConfig } from "./config";
 
 const app = express();
 setupApp(app);
+app.set('trust proxy', true); // для получения корректного ip-адреса из req.ip необходимо вызвать
 
 const PORT = envConfig.appPort;
 

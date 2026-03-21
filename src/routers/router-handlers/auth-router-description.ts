@@ -139,20 +139,13 @@ export const resendRegistrationConfirmation = async (
 };
 
 export const refreshTokenOnDemand = async (req: Request, res: Response) => {
-    const oldRefreshToken = req.cookies.refreshToken;
-
-    // || {} введено для тех случаев если забыли например подключить cooke-parcer, тогда поля cookies в структуре req вообще будет отсутствовать и тогда undefined крашнет приложение
-    // if (!refreshToken)
-    // {
-    //     return res.status(HttpStatus.Unauthorized).json({
-    //         error: `Malformed refresh token, was not found.`,
-    //     });
-    // }
 
     const pairOfTokens = await authService.refreshTokenOnDemand(
-        oldRefreshToken,
+        // req.cookies.refreshToken,
         req.user!.userId!,
+        req.sessionId!
     );
+
     if (!pairOfTokens.data) {
         console.error(
             "Error description: ",
@@ -173,11 +166,12 @@ export const refreshTokenOnDemand = async (req: Request, res: Response) => {
 };
 
 export const logoutOnDemand = async (req: Request, res: Response) => {
-    const oldRefreshToken = req.cookies.refreshToken;
+    // const oldRefreshToken = req.cookies.refreshToken;
 
     const logoutResult = await authService.logoutOnDemand(
-        oldRefreshToken,
+        // oldRefreshToken,
         req.user!.userId!,
+        req.sessionId!
     );
 
     return logoutResult

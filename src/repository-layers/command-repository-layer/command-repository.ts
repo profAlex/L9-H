@@ -8,6 +8,7 @@ import {
     usersCollection,
     refreshTokensBlackListCollection,
     sessionsDataStorage,
+    requestsRestrictionDataStorage,
 } from "../../db/mongo.db";
 import { ObjectId, WithId } from "mongodb";
 import { BlogPostInputModel } from "../../routers/router-types/blog-post-input-model";
@@ -75,6 +76,12 @@ export async function findCommentByPrimaryKey(
     id: ObjectId,
 ): Promise<CommentStorageModel | null> {
     return commentsCollection.findOne({ _id: id });
+}
+
+export async function findSessionByPrimaryKey(
+    id: ObjectId,
+): Promise<SessionStorageModel | null> {
+    return sessionsDataStorage.findOne({ _id: id });
 }
 
 export const dataCommandRepository = {
@@ -1161,7 +1168,6 @@ export const dataCommandRepository = {
             const result =
                 await refreshTokensBlackListCollection.insertOne(
                     refreshTokenInfo,
-
                 );
             return !!result;
         } catch (error) {
@@ -1204,46 +1210,70 @@ export const dataCommandRepository = {
     //     expiresAt: Date;
     // }
 
-    async findSession(sessionDto: UserSession): Promise<ObjectId | null> {
+    // там где этот метод используется для гварда - айдишник сессии в базе передаем через req, чтобы впоследствии можно было быстро найти данную сессию
+    async findSession(
+        userId: string,
+        deviceId: string,
+        expiresAt: Date,
+        issuedAt: Date,
+    ): Promise<ObjectId | null> {
         try {
-            const session:WithId<SessionStorageModel> | null = await sessionsDataStorage.findOne(
-                {
-                    userId: sessionDto.userId,
-                    deviceId: sessionDto.deviceId,
-                    deviceName: sessionDto.deviceName,
-                },
-                { projection: { _id: 1 } },
-            );
+            const session: WithId<SessionStorageModel> | null =
+                await sessionsDataStorage.findOne(
+                    {
+                        userId: userId,
+                        deviceId: deviceId,
+                        expiresAt: expiresAt,
+                        issuedAt: issuedAt,
+                    },
+                    { projection: { _id: 1 } },
+                );
 
             return session ? session._id : null;
-        } catch(error) {
-            console.error(
-                "Unknown error during findSession",
-                error,
-            );
+        } catch (error) {
+            console.error("Unknown error during findSession", error);
 
             return null;
         }
     },
 
-
-    async updateSession(sessionDto: UserSession, sessionIndexId: ObjectId): Promise<ObjectId | null> {
+    async createSession(sessionDto: UserSession): Promise<boolean> {
         try {
-            const session:WithId<SessionStorageModel> | null = await sessionsDataStorage.findOne(
+            const result = await sessionsDataStorage.insertOne(sessionDto);
+
+            return !!result;
+        } catch (error) {
+            console.error("Unknown error during createSession", error);
+
+            return false;
+        }
+    },
+
+    async updateSession(
+        expiresAt: Date,
+        issuedAt: Date,
+        sessionIndexId: ObjectId,
+    ): Promise<boolean | null> {
+        try {
+            const result = await usersCollection.updateOne(
+                { _id: sessionIndexId },
                 {
-                    userId: sessionDto.userId,
-                    deviceId: sessionDto.deviceId,
-                    deviceName: sessionDto.deviceName,
+                    $set: {
+                        expiresAt: expiresAt,
+                        issuedAt: issuedAt,
+                    },
                 },
-                { projection: { _id: 1 } },
             );
 
-            return session ? session._id : null;
-        } catch(error) {
-            console.error(
-                "Unknown error during findSession",
-                error,
-            );
+            if (!result.acknowledged) {
+                console.error("Couldn't update session inside updateSession");
+
+                return null;
+            }
+
+            return !!result;
+        } catch (error) {
+            console.error("Unknown error inside findSession", error);
 
             return null;
         }
@@ -1258,5 +1288,7 @@ export const dataCommandRepository = {
         await usersCollection.deleteMany({});
         await commentsCollection.deleteMany({});
         await refreshTokensBlackListCollection.deleteMany({});
+        await sessionsDataStorage.deleteMany({});
+        await requestsRestrictionDataStorage.deleteMany({});
     },
 };

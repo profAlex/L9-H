@@ -20,16 +20,18 @@ export class UserSession {
         this._id = _id;
         this.userId = userId;
         this.deviceId = UUIDgeneration.generateUUID();
-        this.issuedAt = new Date();
+
+        // Получаем текущее время в мс
+        const currentTimeMs = Date.now();
+        // Преобразуем в секунды с округлением вниз
+        const timestampSeconds = Math.floor(currentTimeMs / 1000);
+        // Создаём Date из округлённых секунд (будет кратно 1000 мс)
+        this.issuedAt = new Date(timestampSeconds * 1000);
+
         this.deviceName = deviceName;
         this.deviceIp = deviceIp;
 
-        // // создаём копию даты issuedAt. Это важно: если просто присвоить this.issuedAt,
-        // // то обе переменные будут ссылаться на один объект, и изменения затронут оба поля.
-        // const expiresAt = new Date(this.issuedAt.getTime());
-        // expiresAt.setSeconds(expiresAt.getSeconds() + 20);
-        // this.expiresAt = expiresAt;
-
+        // Устанавливаем expiresAt на основе той же базовой временной метки
         this.expiresAt = new Date(
             this.issuedAt.getTime() + envConfig.refreshTokenLifetime * 1000,
         );
