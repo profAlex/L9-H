@@ -7,7 +7,6 @@ import { HttpStatus } from "../common/http-statuses/http-statuses";
 import { RegistrationUserInputModel } from "../routers/router-types/auth-registration-input-model";
 import {
     dataCommandRepository,
-    findSessionByPrimaryKey,
 } from "../repository-layers/command-repository-layer/command-repository";
 import { RegistrationConfirmationInput } from "../routers/router-types/auth-registration-confirmation-input-model";
 import { ResentRegistrationConfirmationInput } from "../routers/router-types/auth-resent-registration-confirmation-input-model";
@@ -368,11 +367,11 @@ export const authService = {
 
     // обновляет сессию, генерирует и возвращает два токена
     async refreshTokenOnDemand(
-        // refreshToken: string,
+        deviceId: string,
         userId: string,
         sessionId: ObjectId,
     ): Promise<CustomResult<RotationPairToken>> {
-        const sessionData = await findSessionByPrimaryKey(sessionId);
+        // const sessionData = await findSessionByPrimaryKey(sessionId);
 
         // формируем новые даты exp и iat
         const currentTimeMs = Date.now();
@@ -412,7 +411,7 @@ export const authService = {
             userId, // тоже что и sessionData!.userId,
             issuedAt,
             expiresAt,
-            sessionData!.deviceId,
+            deviceId,
         );
         if (!pairOfToken.data) {
             console.error(pairOfToken.statusDescription);
@@ -460,15 +459,18 @@ export const authService = {
         // oldRefreshToken: string,
         relatedUserId: string,
         sessionId: ObjectId,
-    ): Promise<boolean> {
+    ): Promise<undefined | null> {
         // const ifSucessfullyAddedToBlackList =
         //     await dataCommandRepository.addRefreshTokenInfoToBlackList({
         //         refreshToken: oldRefreshToken,
         //         relatedUserId: relatedUserId,
         //     });
+        const ifLoggedOutSuccessfully = await dataCommandRepository.removeSession(sessionId);
 
-        return ifSucessfullyAddedToBlackList;
+        return ifLoggedOutSuccessfully;
     },
+
+
 
     // вспомогательная функция
     async checkUserCredentials(

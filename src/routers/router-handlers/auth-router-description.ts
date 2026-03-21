@@ -21,7 +21,6 @@ export const attemptToLogin = async (
     req: RequestWithBody<AuthLoginInputModel>,
     res: Response,
 ) => {
-
     const loginResult: CustomResult<RotationPairToken> =
         await authService.loginUser(req, res);
 
@@ -139,11 +138,11 @@ export const resendRegistrationConfirmation = async (
 };
 
 export const refreshTokenOnDemand = async (req: Request, res: Response) => {
-
     const pairOfTokens = await authService.refreshTokenOnDemand(
         // req.cookies.refreshToken,
+        req.deviceId!,
         req.user!.userId!,
-        req.sessionId!
+        req.sessionId!,
     );
 
     if (!pairOfTokens.data) {
@@ -171,10 +170,12 @@ export const logoutOnDemand = async (req: Request, res: Response) => {
     const logoutResult = await authService.logoutOnDemand(
         // oldRefreshToken,
         req.user!.userId!,
-        req.sessionId!
+        req.sessionId!,
     );
 
-    return logoutResult
-        ? res.sendStatus(HttpStatus.NoContent)
-        : res.sendStatus(HttpStatus.Unauthorized);
+    if (logoutResult === null) {
+        return res.sendStatus(HttpStatus.NoContent);
+    } else if (logoutResult === undefined) {
+        return res.sendStatus(HttpStatus.Unauthorized);
+    }
 };

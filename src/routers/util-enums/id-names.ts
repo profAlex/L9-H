@@ -3,4 +3,5 @@ export enum IdParamName {
     BlogId = "blogId",
     UserId = "userId",
     CommentId = "commentId",
+    DeviceId = "deviceId",
 }

@@ -1,0 +1,80 @@
+"use strict";
+// import dotenv from "dotenv";
+// dotenv.config();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.envConfig = void 0;
+require("dotenv/config");
+// дефолтные значения параметров
+const DEFAULT_PORT = "3003";
+const DEFAULT_ACCESS_TOKEN_SECRET = "ryuas235GCPHvlt347782uzHBSDuw4hr";
+const DEFAULT_REFRESH_TOKEN_SECRET = "ryuas235GCPHvlt347782uzHBSDuw4hr";
+const DEFAULT_ACCESS_TOKEN_LIFETIME = "10"; // sec
+const DEFAULT_REFRESH_TOKEN_LIFETIME = "20"; // sec
+const DEFAULT_COOKIE_DOMAIN = "localhost";
+const DEFAULT_COOKIE_SECURE = true;
+const DEFAULT_MAIL_PORT = "";
+const DEFAULT_MAIL_HOST = "";
+const DEFAULT_MAIL_LOGIN = "";
+const DEFAULT_MAIL_PASS = "";
+// парсинг значений
+const getConfig = () => {
+    let appPort = process.env.PORT;
+    let accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+    let refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+    let accessTokenLifetime = process.env.ACCESS_TOKEN_LIFETIME;
+    let refreshTokenLifetime = process.env.REFRESH_TOKEN_LIFETIME;
+    let mailPort = process.env.MAIL_PORT;
+    let mailHost = process.env.MAIL_HOST;
+    let mailLogin = process.env.MAIL_LOGIN;
+    let mailPass = process.env.MAIL_PASS;
+    // валидация
+    if (!appPort) {
+        console.warn(`PORT is not defined in .env! Applied default port number ${DEFAULT_PORT}.`);
+        appPort = DEFAULT_PORT;
+    }
+    // if (!accessJwtSecret) throw new Error("JWT_SECRET is required in .env");
+    if (!accessTokenSecret) {
+        console.warn("ACCESS_TOKEN_SECRET is not defined in .env! Applied default value.");
+        accessTokenSecret = DEFAULT_ACCESS_TOKEN_SECRET;
+    }
+    if (!refreshTokenSecret) {
+        console.warn("REFRESH_TOKEN_SECRET is not defined in .env! Applied default value.");
+        refreshTokenSecret = DEFAULT_REFRESH_TOKEN_SECRET;
+    }
+    if (!accessTokenLifetime) {
+        console.warn(`ACCESS_TOKEN_LIFETIME is not defined in .env! Applied default value (seconds) (: ${DEFAULT_ACCESS_TOKEN_LIFETIME}.`);
+        accessTokenLifetime = DEFAULT_ACCESS_TOKEN_LIFETIME;
+    }
+    if (!refreshTokenLifetime) {
+        console.warn(`REFRESH_TOKEN_LIFETIME is not defined in .env! Applied default value (seconds): ${DEFAULT_REFRESH_TOKEN_LIFETIME}.`);
+        refreshTokenLifetime = DEFAULT_REFRESH_TOKEN_LIFETIME;
+    }
+    if (!mailPort) {
+        console.warn(`MAIL_PORT is not defined in .env! Applied default value: ${DEFAULT_MAIL_PORT}.`);
+        mailPort = DEFAULT_MAIL_PORT;
+    }
+    if (!mailHost) {
+        console.warn(`MAIL_HOST is not defined in .env! Applied default value: ${DEFAULT_MAIL_HOST}.`);
+        mailHost = DEFAULT_MAIL_HOST;
+    }
+    if (!mailLogin) {
+        console.warn(`MAIL_LOGIN is not defined in .env! Applied default value: ${DEFAULT_MAIL_LOGIN}.`);
+        mailLogin = DEFAULT_MAIL_LOGIN;
+    }
+    if (!mailPass) {
+        console.warn(`MAIL_PASS is not defined in .env! Applied default value: ${DEFAULT_MAIL_PASS}.`);
+        mailPass = DEFAULT_MAIL_PASS;
+    }
+    return {
+        appPort: parseInt(appPort, 10),
+        accessTokenSecret: accessTokenSecret,
+        refreshTokenSecret: refreshTokenSecret,
+        accessTokenLifetime: parseInt(accessTokenLifetime, 10),
+        refreshTokenLifetime: parseInt(refreshTokenLifetime, 10),
+        mailPort: parseInt(mailPort, 10),
+        mailHost: mailHost,
+        mailLogin: mailLogin,
+        mailPass: mailPass,
+    };
+};
+exports.envConfig = getConfig();

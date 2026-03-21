@@ -779,7 +779,7 @@ export const dataCommandRepository = {
                             message: `Internal Server Error`,
                         },
                     ],
-                } as CustomResult;
+                };
             }
 
             if (sentUserId !== comment.commentatorInfo.userId) {
@@ -793,7 +793,7 @@ export const dataCommandRepository = {
                             message: `User is forbidden to delete another user’s comment`,
                         },
                     ],
-                } as CustomResult;
+                };
             }
 
             const res = await commentsCollection.deleteOne({
@@ -811,7 +811,7 @@ export const dataCommandRepository = {
                             message: `Unknown error while trying to delete comment`,
                         },
                     ],
-                } as CustomResult;
+                };
             }
 
             return {
@@ -824,7 +824,7 @@ export const dataCommandRepository = {
                         message: "",
                     },
                 ],
-            } as CustomResult;
+            };
         } catch (error) {
             return {
                 data: null,
@@ -838,7 +838,7 @@ export const dataCommandRepository = {
                         message: `Unknown error inside try-catch block: ${JSON.stringify(error)}`,
                     },
                 ],
-            } as CustomResult;
+            };
         }
     },
 
@@ -1255,7 +1255,7 @@ export const dataCommandRepository = {
         sessionIndexId: ObjectId,
     ): Promise<boolean | null> {
         try {
-            const result = await usersCollection.updateOne(
+            const result = await sessionsDataStorage.updateOne(
                 { _id: sessionIndexId },
                 {
                     $set: {
@@ -1278,6 +1278,49 @@ export const dataCommandRepository = {
             return null;
         }
     },
+
+    async removeSession(sessionId: ObjectId): Promise<undefined | null> {
+        try {
+            const result = await sessionsDataStorage.deleteOne({
+                _id: sessionId,
+            });
+
+            if (!result.acknowledged) {
+                console.error("Couldn't remove session inside removeSeesion");
+
+                return undefined;
+            }
+
+            return null;
+        }catch(error) {
+            console.error("Unknown error inside removeSeesion", error);
+
+            return undefined;
+        }
+    },
+
+
+    async removeAllButOneSession(sessionId: ObjectId, userId:string): Promise<undefined | null> {
+        try {
+            const result = await sessionsDataStorage.deleteMany({
+                userId: userId,
+                _id: { $ne: sessionId }
+            });
+
+            if (!result.acknowledged) {
+                console.error("Couldn't remove sessions inside removeAllButOneSession");
+
+                return undefined;
+            }
+
+            return null;
+        }catch(error) {
+            console.error("Unknown error inside removeAllButOneSession", error);
+
+            return undefined;
+        }
+    },
+
 
     // *****************************
     // методы для тестов

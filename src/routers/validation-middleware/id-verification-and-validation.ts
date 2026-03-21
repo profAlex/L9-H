@@ -26,7 +26,8 @@ export function createIdValidator(
     };
 }
 
-// функция validateId непосредствено занимается проверкой наличия Id в соответствующей коллекции
+// функция validateId непосредственно занимается проверкой наличия Id в соответствующей коллекции
+// будет логически корректно работать только если в качестве sentId используется сформированный из ObjectId (mongoDB) уникальный идентификатор
 async function validateId(
     sentId: string | undefined,
     collectionName: string,

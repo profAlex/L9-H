@@ -6,6 +6,7 @@ declare global {
         export interface Request {
             user: UserIdType | undefined;
             sessionId: ObjectId | undefined;
+            deviceId: string | undefined;
         }
     }
 }
