@@ -13,10 +13,10 @@ const DEFAULT_REFRESH_TOKEN_LIFETIME = "20"; // sec
 const DEFAULT_COOKIE_DOMAIN = "localhost";
 const DEFAULT_COOKIE_SECURE = true;
 
-const DEFAULT_MAIL_PORT = "";
-const DEFAULT_MAIL_HOST = "";
-const DEFAULT_MAIL_LOGIN = "";
-const DEFAULT_MAIL_PASS = "";
+const DEFAULT_MAIL_PORT = "465";
+const DEFAULT_MAIL_HOST = "smtp.yandex.ru";
+const DEFAULT_MAIL_LOGIN = "geniusb198";
+const DEFAULT_MAIL_PASS = "gbpqxmmaleaqmiwu";
 
 
 // структура конфигурационных значений
