@@ -22,7 +22,6 @@ const attemptToLogin = (req, res) => __awaiter(void 0, void 0, void 0, function*
             .send({ errorsMessages: loginResult.errorsMessages });
     }
     const { accessToken, refreshToken, relatedUserId } = loginResult.data;
-    // !!!! здесь занесение в черный список refreshToken?? (ну или внутри authService.loginUser)
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true });
     return res.status(http_statuses_1.HttpStatus.Ok).send({ accessToken: accessToken });
 });

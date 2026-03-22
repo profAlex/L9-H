@@ -974,7 +974,7 @@ exports.dataCommandRepository = {
         });
     },
     // *****************************
-    // методы для управления сессиями
+    // методы для управления сессиями, а также управления сущностью security devices
     // *****************************
     // export type SessionStorageModel = {
     //     userId: string;
@@ -1069,6 +1069,18 @@ exports.dataCommandRepository = {
             catch (error) {
                 console.error("Unknown error inside removeAllButOneSession", error);
                 return undefined;
+            }
+        });
+    },
+    insertUrlCall(uslCall) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield mongo_db_1.requestsRestrictionDataStorage.insertOne(uslCall);
+                return !!result;
+            }
+            catch (error) {
+                console.error("Unknown error inside insertUrlCall", error);
+                return false;
             }
         });
     },

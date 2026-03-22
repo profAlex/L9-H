@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.securityDevicesService = void 0;
 const command_repository_1 = require("../repository-layers/command-repository-layer/command-repository");
+const query_repository_1 = require("../repository-layers/query-repository-layer/query-repository");
 exports.securityDevicesService = {
     removeSessionById(sessionId) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -20,6 +21,11 @@ exports.securityDevicesService = {
     removeAllButOneSession(sessionId, userId) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield command_repository_1.dataCommandRepository.removeAllButOneSession(sessionId, userId);
+        });
+    },
+    getActiveDevicesList(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield query_repository_1.dataQueryRepository.getActiveDevicesList(userId);
         });
     },
 };

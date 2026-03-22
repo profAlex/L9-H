@@ -2,7 +2,11 @@ import { Router } from "express";
 import { IdParamName } from "./util-enums/id-names";
 import { refreshTokenGuard } from "./guard-middleware/refresh-token-guard";
 import { validateDeviceId } from "./validation-middleware/security-device-deviceId-validation";
-import { removeAllButOneSession, removeSessionById } from "./router-handlers/security-devices-router-description";
+import {
+    getDevicesList,
+    removeAllButOneSession,
+    removeSessionById
+} from "./router-handlers/security-devices-router-description";
 
 export const securityDevicesRouter = Router();
 

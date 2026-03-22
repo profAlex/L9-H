@@ -66,10 +66,10 @@ exports.authService = {
             }
             // создаем мета данные для сессии
             const sessionObjectId = new mongodb_1.ObjectId();
-            const userAgent = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
+            const deviceName = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
             const deviceIp = req.ip || "";
             // создаем объект сессии
-            const tempSession = new session_class_1.UserSession(sessionObjectId, user.id, userAgent, deviceIp);
+            const tempSession = new session_class_1.UserSession(sessionObjectId, user.id, deviceName, deviceIp);
             const sessionIat = tempSession.issuedAt;
             const sessionExp = tempSession.expiresAt;
             const sessionDeviceId = tempSession.deviceId;

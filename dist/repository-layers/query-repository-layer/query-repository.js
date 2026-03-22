@@ -21,6 +21,7 @@ const map_to_UserViewModel_1 = require("../mappers/map-to-UserViewModel");
 const map_to_UserMeViewModel_1 = require("../mappers/map-to-UserMeViewModel");
 const map_paginated_comment_search_1 = require("../mappers/map-paginated-comment-search");
 const map_to_CommentViewModel_1 = require("../mappers/map-to-CommentViewModel");
+const mapSessionStorageToDeviceViewModel_1 = require("../mappers/mapSessionStorageToDeviceViewModel");
 function findBlogByPrimaryKey(id) {
     return __awaiter(this, void 0, void 0, function* () {
         return mongo_db_1.bloggersCollection.findOne({ _id: id });
@@ -316,6 +317,58 @@ exports.dataQueryRepository = {
                 }
             }
             return undefined;
+        });
+    },
+    // *****************************
+    // методы для security-devices
+    // *****************************
+    getActiveDevicesList(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const currentDate = new Date();
+            const activeSessions = yield mongo_db_1.sessionsDataStorage
+                .find({
+                userId: userId,
+                expiresAt: { $gt: currentDate },
+            }, {
+                projection: {
+                    deviceIp: 1,
+                    deviceName: 1,
+                    issuedAt: 1,
+                    deviceId: 1,
+                },
+            })
+                .toArray();
+            if (activeSessions.length > 0) {
+                return (0, mapSessionStorageToDeviceViewModel_1.mapSessionStorageToDeviceViewModel)(activeSessions);
+            }
+            return [];
+        });
+    },
+    calculateIfCallAllowed(url, deviceIp, deviceName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Определяем временную границу: сейчас минус 10 секунд
+            const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+            try {
+                // Подсчитываем количество записей, соответствующих условиям:
+                // - calledURL совпадает с переданным URL
+                // - deviceIp совпадает с переданным IP
+                // - deviceName совпадает с переданным именем устройства
+                // - dateOfRequest >= tenSecondsAgo (за последние 10 секунд)
+                const count = yield mongo_db_1.requestsRestrictionDataStorage.countDocuments({
+                    calledURL: url,
+                    deviceIp: deviceIp,
+                    deviceName: deviceName,
+                    dateOfRequest: { $gte: tenSecondsAgo },
+                });
+                // Возвращаем true, если количество запросов <= 5 (вызов разрешён),
+                // false — если > 5 (вызов запрещён)
+                return count <= 5;
+            }
+            catch (error) {
+                console.error("Error while checking request restrictions:", error);
+                // В случае ошибки считаем, что вызов запрещён (fail‑safe)
+                return false;
+            }
         });
     },
     // *****************************
