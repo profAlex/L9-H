@@ -18,13 +18,13 @@ securityDevicesRouter.delete(
 );
 
 securityDevicesRouter.delete(
-    `/devices`,
+    `/`,
     refreshTokenGuard,
     removeAllButOneSession,
 );
 
 securityDevicesRouter.get(
-    `/devices`,
+    `/`,
     refreshTokenGuard,
     getDevicesList,
 );
