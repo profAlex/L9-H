@@ -4,7 +4,7 @@ export type UserIdType = { userId: string | null };
 
 
 export type SessionMetaDataType = {
-    userId: string | null;
+    user: UserIdType;
     sessionId: ObjectId | undefined;
     deviceId: string | undefined;
 };

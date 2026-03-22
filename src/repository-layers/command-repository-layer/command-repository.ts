@@ -32,6 +32,7 @@ import { randomUUID } from "node:crypto";
 import { RefreshTokenModel } from "../../adapters/verification/auth-refresh-token-model";
 import { UserSession } from "../../common/classes/session-class";
 import { SessionStorageModel } from "../../routers/router-types/auth-SessionStorageModel";
+import { RequestRestrictionStorageModel } from "../../routers/router-types/auth-RequestRestrictionStorageModel";
 
 export type BloggerCollectionStorageModel = {
     _id: ObjectId;
@@ -1198,7 +1199,7 @@ export const dataCommandRepository = {
     },
 
     // *****************************
-    // методы для управления сессиями
+    // методы для управления сессиями, а также управления сущностью security devices
     // *****************************
 
     // export type SessionStorageModel = {
@@ -1321,6 +1322,20 @@ export const dataCommandRepository = {
         }
     },
 
+    async insertUrlCall(uslCall: RequestRestrictionStorageModel): Promise<boolean>
+    {
+        try {
+            const result =
+                await requestsRestrictionDataStorage.insertOne(uslCall);
+
+            return !!result;
+
+        }catch(error) {
+            console.error("Unknown error inside insertUrlCall", error);
+
+            return false;
+        }
+    },
 
     // *****************************
     // методы для тестов

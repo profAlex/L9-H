@@ -4,6 +4,8 @@ import {
     bloggersCollection,
     commentsCollection,
     postsCollection,
+    requestsRestrictionDataStorage,
+    sessionsDataStorage,
     usersCollection,
 } from "../../db/mongo.db";
 import { InputGetBlogPostsByIdQuery } from "../../routers/router-types/blog-search-by-id-input-model";
@@ -34,6 +36,8 @@ import { InputGetCommentsQueryModel } from "../../routers/router-types/comment-s
 import { CommentViewModel } from "../../routers/router-types/comment-view-model";
 import { CommentStorageModel } from "../../routers/router-types/comment-storage-model";
 import { mapSingleCommentToViewModel } from "../mappers/map-to-CommentViewModel";
+import { DeviceViewModel } from "../../routers/router-types/security-devices-device-view-model";
+import { mapSessionStorageToDeviceViewModel } from "../mappers/mapSessionStorageToDeviceViewModel";
 
 async function findBlogByPrimaryKey(
     id: ObjectId,
@@ -437,6 +441,69 @@ export const dataQueryRepository = {
 
         return undefined;
     },
+
+    // *****************************
+    // методы для security-devices
+    // *****************************
+    async getActiveDevicesList(
+        userId: string,
+    ): Promise<Array<DeviceViewModel>> {
+        const currentDate = new Date();
+        const activeSessions = await sessionsDataStorage
+            .find(
+                {
+                    userId: userId,
+                    expiresAt: { $gt: currentDate },
+                },
+                {
+                    projection: {
+                        deviceIp: 1,
+                        deviceName: 1,
+                        issuedAt: 1,
+                        deviceId: 1,
+                    },
+                },
+            )
+            .toArray();
+
+        if (activeSessions.length > 0) {
+            return mapSessionStorageToDeviceViewModel(activeSessions);
+        }
+
+        return [];
+    },
+
+    async calculateIfCallAllowed(
+        url: string,
+        deviceIp: string,
+        deviceName: string,
+    ): Promise<boolean> {
+        // Определяем временную границу: сейчас минус 10 секунд
+        const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+
+        try {
+            // Подсчитываем количество записей, соответствующих условиям:
+            // - calledURL совпадает с переданным URL
+            // - deviceIp совпадает с переданным IP
+            // - deviceName совпадает с переданным именем устройства
+            // - dateOfRequest >= tenSecondsAgo (за последние 10 секунд)
+            const count = await requestsRestrictionDataStorage.countDocuments({
+                calledURL: url,
+                deviceIp: deviceIp,
+                deviceName: deviceName,
+                dateOfRequest: { $gte: tenSecondsAgo },
+            });
+
+            // Возвращаем true, если количество запросов <= 5 (вызов разрешён),
+            // false — если > 5 (вызов запрещён)
+            return count <= 5;
+        } catch (error) {
+            console.error("Error while checking request restrictions:", error);
+            // В случае ошибки считаем, что вызов запрещён (fail‑safe)
+            return false;
+        }
+    },
+
     // *****************************
     // методы для тестов
     // *****************************

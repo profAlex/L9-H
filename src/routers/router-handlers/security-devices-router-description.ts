@@ -7,6 +7,8 @@ import { IdParamName } from "../util-enums/id-names";
 import { HttpStatus } from "../../common/http-statuses/http-statuses";
 import { securityDevicesService } from "../../service-layer(BLL)/security-devices-service";
 import { SessionMetaDataType } from "../router-types/user-id-type";
+import { dataQueryRepository } from "../../repository-layers/query-repository-layer/query-repository";
+import { DeviceViewModel } from "../router-types/security-devices-device-view-model";
 
 export const removeSessionById = async (req: RequestWithParamsAndSessionMetaData<
     {
@@ -28,21 +30,19 @@ export const removeAllButOneSession = async (req: RequestWithSessionMetaData<Ses
 
     if (result === undefined) {
         res.status(HttpStatus.InternalServerError).json({
-            error: "Internal server error during await securityDevicesService.removeAllButOneSession(req.sessionId!, req.user!.userId!)  inside removeAllButOneSession",
+            error: "Internal server error during await securityDevicesService.removeAllButOneSession(req.sessionId!, req.user!.userId!) inside removeAllButOneSession",
         });
     }
     res.sendStatus(HttpStatus.NoContent);
 };
 
 export const getDevicesList = async (req: RequestWithSessionMetaData<SessionMetaDataType>, res: Response) => {
-    const sanitizedQuery = matchedData<InputGetPostsQuery>(req, {
-        locations: ["query"],
-        includeOptionals: true,
-    }); //утилита для извечения трансформированных значений после валидатара
-    //в req.query остаются сырые квери параметры (строки)
+        const activeDevicesList:Array<DeviceViewModel> = await securityDevicesService.getActiveDevicesList(req.user!.userId!);
 
-    const postsListOutput =
-        await dataQueryRepository.getSeveralPosts(sanitizedQuery);
-
-    res.status(HttpStatus.Ok).send(postsListOutput);
+    if (activeDevicesList === undefined) {
+        res.status(HttpStatus.InternalServerError).json({
+            error: "Internal server error during await securityDevicesService.getActiveDevicesList(req.user!.userId!) inside getDevicesList",
+        });
+    }
+    res.status(HttpStatus.Ok).send(activeDevicesList);
 };

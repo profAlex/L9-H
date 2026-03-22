@@ -19,12 +19,14 @@ import {
     registrationResentConfirmationValidator,
 } from "./validation-middleware/auth-router-general-middleware-validator";
 import { refreshTokenGuard } from "./guard-middleware/refresh-token-guard";
+import { ipRequestRestrictionGuard } from "./guard-middleware/ip-request-restriction-guard";
 
 export const authRouter = Router();
 
 // Try login user to the system
 authRouter.post(
     "/login",
+    ipRequestRestrictionGuard,
     loginInputModelValidation,
     inputErrorManagementMiddleware,
     attemptToLogin,
@@ -33,6 +35,7 @@ authRouter.post(
 // Confirm registration
 authRouter.post(
     "/registration-confirmation",
+    ipRequestRestrictionGuard,
     registrationConfirmationValidator,
     inputErrorManagementMiddleware,
     registrationConfirmation,
@@ -41,6 +44,7 @@ authRouter.post(
 // Registration in the system. Email with confirmation code will be send to passed email address
 authRouter.post(
     "/registration",
+    ipRequestRestrictionGuard,
     userInputModelValidation,
     inputErrorManagementMiddleware,
     registrationAttemptByUser,
@@ -49,6 +53,7 @@ authRouter.post(
 // Resend Registration confirmation email
 authRouter.post(
     "/registration-email-resending",
+    ipRequestRestrictionGuard,
     registrationResentConfirmationValidator,
     inputErrorManagementMiddleware,
     resendRegistrationConfirmation,

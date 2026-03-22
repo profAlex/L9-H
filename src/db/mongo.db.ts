@@ -69,6 +69,12 @@ export async function runDB() {
     );
 
     requestsRestrictionDataStorage = db.collection<RequestRestrictionStorageModel>(REQUESTS_RESTRICTIONS_COLLECTION_NAME);
+    await requestsRestrictionDataStorage.createIndex(
+        { dateOfRequest: 1 }, // поле для индексации
+        {
+            expireAfterSeconds: 11, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+        },
+    );
 
     try {
         await client.connect();

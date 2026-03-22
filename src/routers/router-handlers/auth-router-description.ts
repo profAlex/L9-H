@@ -1,8 +1,6 @@
-import { NextFunction, Request, Response } from "express";
-import { LoginInputModel } from "../router-types/login-input-model";
+import { Request, Response } from "express";
 import { authService } from "../../service-layer(BLL)/auth-service";
 import { CustomResult } from "../../common/result-type/result-type";
-import { token } from "../../adapters/verification/token-type";
 import { HttpStatus } from "../../common/http-statuses/http-statuses";
 import {
     RequestWithBody,
@@ -10,7 +8,6 @@ import {
 } from "../request-types/request-types";
 import { UserIdType } from "../router-types/user-id-type";
 import { dataQueryRepository } from "../../repository-layers/query-repository-layer/query-repository";
-import { AccessTokenModel } from "../../adapters/verification/auth-access-token-model";
 import { AuthLoginInputModel } from "../router-types/auth-login-input-model";
 import { RegistrationUserInputModel } from "../router-types/auth-registration-input-model";
 import { RegistrationConfirmationInput } from "../router-types/auth-registration-confirmation-input-model";
@@ -37,8 +34,6 @@ export const attemptToLogin = async (
     }
 
     const { accessToken, refreshToken, relatedUserId } = loginResult.data;
-
-    // !!!! здесь занесение в черный список refreshToken?? (ну или внутри authService.loginUser)
 
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true });
 

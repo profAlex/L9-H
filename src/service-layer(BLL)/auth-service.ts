@@ -79,14 +79,14 @@ export const authService = {
 
         // создаем мета данные для сессии
         const sessionObjectId = new ObjectId();
-        const userAgent = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
+        const deviceName = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
         const deviceIp = req.ip || "";
 
         // создаем объект сессии
         const tempSession = new UserSession(
             sessionObjectId,
             user.id,
-            userAgent,
+            deviceName,
             deviceIp,
         );
         const sessionIat = tempSession.issuedAt;
