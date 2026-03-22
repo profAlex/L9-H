@@ -12,41 +12,44 @@ export const ipRequestRestrictionGuard = async (
     res: Response,
     next: NextFunction,
 ) => {
-    // создаем объект при обращении данные для сессии
-    const requestId = new ObjectId();
-    const deviceName = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
-    const deviceIp = req.ip || "";
-    const url = req.originalUrl || "";
+    try {
+        const requestId = new ObjectId();
+        const deviceName = req.get("User-Agent") || "";
+        const deviceIp = req.ip || "";
+        const url = req.originalUrl || "";
 
-    const checkIfCallAllowed = await dataQueryRepository.calculateIfCallAllowed(
-        url,
-        deviceIp,
-        deviceName,
-    );
+        const checkIfCallAllowed = await dataQueryRepository.calculateIfCallAllowed(
+            url,
+            deviceIp,
+            deviceName,
+        );
 
-    if (!checkIfCallAllowed) {
-        return res.status(HttpStatus.TooManyRequests).json({
-            error: `Too many requests on URL: ${url}`,
-        });
-    }
+        if (!checkIfCallAllowed) {
+            return res.status(HttpStatus.TooManyRequests).json({
+                error: `Too many requests on URL: ${url}`,
+            });
+        }
 
-    const newUrlCall: RequestRestrictionStorageModel = {
-        _id: requestId,
-        deviceIp: deviceIp,
-        deviceName: deviceName,
-        calledURL: url,
-        dateOfRequest: new Date(),
-    };
+        const newUrlCall: RequestRestrictionStorageModel = {
+            _id: requestId,
+            deviceIp: deviceIp,
+            deviceName: deviceName,
+            calledURL: url,
+            dateOfRequest: new Date(),
+        };
 
-    const insertedUrlCall =
-        await dataCommandRepository.insertUrlCall(newUrlCall);
-    if (!insertedUrlCall) {
+        const insertedUrlCall = await dataCommandRepository.insertUrlCall(newUrlCall);
+        if (!insertedUrlCall) {
+            return res.status(HttpStatus.InternalServerError).json({
+                error: "Internal server error during insertUrlCall",
+            });
+        }
+
+        return next();
+    } catch (error) {
+        console.error('Error in ipRequestRestrictionGuard:', error);
         return res.status(HttpStatus.InternalServerError).json({
-            error: "Internal server error during await dataCommandRepository.insertUrlCall(newUrlCall) call inside ipRequestRestrictionGuard",
+            error: 'Internal server error in request restriction guard',
         });
     }
-
-    next();
-
-    return next();
 };

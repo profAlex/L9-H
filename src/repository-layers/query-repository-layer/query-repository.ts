@@ -421,9 +421,16 @@ export const dataQueryRepository = {
     async findByLoginOrEmail(
         loginOrEmail: string,
     ): Promise<WithId<UserCollectionStorageModel> | null> {
-        return usersCollection.findOne({
-            $or: [{ email: loginOrEmail }, { login: loginOrEmail }],
-        });
+        try {
+            const result = await usersCollection.findOne({
+                $or: [{ email: loginOrEmail }, { login: loginOrEmail }],
+            });
+
+            return result;
+        } catch (error) {
+            console.error('Error finding user by login or email:', error);
+            return null;
+        }
     },
 
     // *****************************

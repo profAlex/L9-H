@@ -26,7 +26,8 @@ const refreshTokenGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, 
             error: `Improper refresh token format`,
         });
     }
-    // вызов jwtService.verifyRefreshToken() сам по себе не гарантирует, что в rawPayload присутствуют все поля из JwtRefreshPayloadType
+    // вызов jwtService.verifyRefreshToken() сам по себе не гарантирует, что в rawPayload
+    // присутствуют все поля из JwtRefreshPayloadType, которые мы ожидаем
     // поэтому нужно добавлять явные проверки в рантайме
     if (!rawPayload.userId) {
         return res.status(http_statuses_1.HttpStatus.Unauthorized).json({

@@ -29,8 +29,12 @@ export const authService = {
         res: Response,
     ): Promise<CustomResult<RotationPairToken>> {
         const { loginOrEmail, password } = req.body;
+        // console.warn("PRE-FIND-BY?");
+
         const user = await dataQueryRepository.findByLoginOrEmail(loginOrEmail);
 
+        // console.warn("USER?", user);
+        // console.warn("USER?", user?.login);
         if (!user)
             return {
                 data: null,

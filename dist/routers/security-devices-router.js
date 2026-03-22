@@ -8,5 +8,5 @@ const security_device_deviceId_validation_1 = require("./validation-middleware/s
 const security_devices_router_description_1 = require("./router-handlers/security-devices-router-description");
 exports.securityDevicesRouter = (0, express_1.Router)();
 exports.securityDevicesRouter.delete(`/:${id_names_1.IdParamName.DeviceId}`, refresh_token_guard_1.refreshTokenGuard, security_device_deviceId_validation_1.validateDeviceId, security_devices_router_description_1.removeSessionById);
-exports.securityDevicesRouter.delete(`/devices`, refresh_token_guard_1.refreshTokenGuard, security_devices_router_description_1.removeAllButOneSession);
-exports.securityDevicesRouter.get(`/devices`, refresh_token_guard_1.refreshTokenGuard, security_devices_router_description_1.getDevicesList);
+exports.securityDevicesRouter.delete(`/`, refresh_token_guard_1.refreshTokenGuard, security_devices_router_description_1.removeAllButOneSession);
+exports.securityDevicesRouter.get(`/`, refresh_token_guard_1.refreshTokenGuard, security_devices_router_description_1.getDevicesList);

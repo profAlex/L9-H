@@ -25,6 +25,7 @@ exports.authService = {
         return __awaiter(this, void 0, void 0, function* () {
             const { loginOrEmail, password } = req.body;
             const user = yield query_repository_1.dataQueryRepository.findByLoginOrEmail(loginOrEmail);
+            console.log("USER?", user === null || user === void 0 ? void 0 : user.login);
             if (!user)
                 return {
                     data: null,

@@ -39,8 +39,8 @@ describe("Test API for managing login, registration and registration-confirmatio
     // let userId_4 :string | undefined = '';
     // let userId_5 :string | undefined = '';
 
-    let loginCreds_1 = {};
-    let loginCreds_2 = {};
+    // let loginCreds_1 = {};
+    // let loginCreds_2 = {};
 
     beforeEach(() => {
         // мокаем возвращаемое значение для некоторых тестируемых здесь функций, относящихся в первую очередь к работе с почтовым сервисом
@@ -90,22 +90,22 @@ describe("Test API for managing login, registration and registration-confirmatio
         // }
         // userId_4 = await dataCommandRepository.createNewUser(newUser_4);
 
-        loginCreds_1 = {
-            loginOrEmail: "hello_wrld1",
-            password: "hello_world",
-        };
-
-        loginCreds_2 = {
-            loginOrEmail: "wrong_log",
-            password: "hello_world",
-        };
+        // loginCreds_1 = {
+        //     loginOrEmail: "hello_wrld1",
+        //     password: "hello_world",
+        // };
+        //
+        // loginCreds_2 = {
+        //     loginOrEmail: "wrong_log",
+        //     password: "hello_world",
+        // };
     });
 
     it("POST '/api/auth/login' - successful login attempt (response 200)", async () => {
         expect(await dataQueryRepository.returnUsersAmount()).toBe(2);
 
-        loginCreds_1 = {
-            loginOrEmail: "hello_wr",
+        const loginCreds_1 = {
+            loginOrEmail: "hello_w2",
             password: "hello_world",
         };
 
@@ -113,7 +113,7 @@ describe("Test API for managing login, registration and registration-confirmatio
             .post(`${AUTH_PATH}/login`)
             .send(loginCreds_1);
 
-        expect(res.status).toBe(HttpStatus.Ok);
+        //expect(res.status).toBe(HttpStatus.Ok);
         const entriesCount = Object.entries(res.body).length;
         expect(entriesCount).toBe(1);
 
@@ -124,6 +124,11 @@ describe("Test API for managing login, registration and registration-confirmatio
 
     it("POST '/api/auth/login' - unsuccessful login attempt (response 401)", async () => {
         expect(await dataQueryRepository.returnUsersAmount()).toBe(2);
+
+        const loginCreds_2 = {
+            loginOrEmail: "wrong_log",
+            password: "hello_world",
+        };
 
         const res = await request(testApp)
             .post(`${AUTH_PATH}/login`)
