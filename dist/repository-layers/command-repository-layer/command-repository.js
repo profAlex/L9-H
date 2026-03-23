@@ -1035,20 +1035,38 @@ exports.dataCommandRepository = {
             }
         });
     },
-    removeSession(sessionId) {
+    removeSessionBySessionId(sessionId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const result = yield mongo_db_1.sessionsDataStorage.deleteOne({
                     _id: sessionId,
                 });
                 if (!result.acknowledged) {
-                    console.error("Couldn't remove session inside removeSeesion");
+                    console.error("Couldn't remove session inside removeSessionBySessionId");
                     return undefined;
                 }
                 return null;
             }
             catch (error) {
-                console.error("Unknown error inside removeSeesion", error);
+                console.error("Unknown error inside removeSessionBySessionId", error);
+                return undefined;
+            }
+        });
+    },
+    removeSessionByDeviceId(deviceId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield mongo_db_1.sessionsDataStorage.deleteOne({
+                    deviceId: deviceId,
+                });
+                if (!result.acknowledged) {
+                    console.error("Couldn't remove session inside removeSessionByDeviceId");
+                    return undefined;
+                }
+                return null;
+            }
+            catch (error) {
+                console.error("Unknown error inside removeSessionByDeviceId", error);
                 return undefined;
             }
         });

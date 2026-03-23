@@ -13,9 +13,9 @@ exports.securityDevicesService = void 0;
 const command_repository_1 = require("../repository-layers/command-repository-layer/command-repository");
 const query_repository_1 = require("../repository-layers/query-repository-layer/query-repository");
 exports.securityDevicesService = {
-    removeSessionById(sessionId) {
+    removeSessionById(deviceId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield command_repository_1.dataCommandRepository.removeSession(sessionId);
+            return yield command_repository_1.dataCommandRepository.removeSessionByDeviceId(deviceId);
         });
     },
     removeAllButOneSession(sessionId, userId) {

@@ -364,7 +364,7 @@ exports.authService = {
             //         refreshToken: oldRefreshToken,
             //         relatedUserId: relatedUserId,
             //     });
-            const ifLoggedOutSuccessfully = yield command_repository_1.dataCommandRepository.removeSession(sessionId);
+            const ifLoggedOutSuccessfully = yield command_repository_1.dataCommandRepository.removeSessionBySessionId(sessionId);
             return ifLoggedOutSuccessfully;
         });
     },

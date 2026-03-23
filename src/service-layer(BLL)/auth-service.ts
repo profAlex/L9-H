@@ -468,7 +468,7 @@ export const authService = {
         //         refreshToken: oldRefreshToken,
         //         relatedUserId: relatedUserId,
         //     });
-        const ifLoggedOutSuccessfully = await dataCommandRepository.removeSession(sessionId);
+        const ifLoggedOutSuccessfully = await dataCommandRepository.removeSessionBySessionId(sessionId);
 
         return ifLoggedOutSuccessfully;
     },

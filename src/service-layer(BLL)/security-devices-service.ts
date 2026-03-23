@@ -5,8 +5,8 @@ import { dataQueryRepository } from "../repository-layers/query-repository-layer
 
 
 export const securityDevicesService = {
-    async removeSessionById(sessionId: ObjectId): Promise<null | undefined> {
-        return await dataCommandRepository.removeSession(sessionId);
+    async removeSessionById(deviceId: string): Promise<null | undefined> {
+        return await dataCommandRepository.removeSessionByDeviceId(deviceId);
     },
 
     async removeAllButOneSession(sessionId: ObjectId, userId:string): Promise<null | undefined> {

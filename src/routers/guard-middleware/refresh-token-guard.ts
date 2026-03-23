@@ -63,7 +63,6 @@ export const refreshTokenGuard = async (
     let sessionId: ObjectId | null;
 
     const sessionsList = await dataQueryRepository.utilGetAllSessionRecords();
-    // console.warn("SHOWING SESSIONS: ", sessionsList)
 
     const iatToPass = new Date(decodedRefreshTokenData?.iat! * 1000);
     const expToPass = new Date(decodedRefreshTokenData?.exp! * 1000);
@@ -74,13 +73,11 @@ export const refreshTokenGuard = async (
             decodedRefreshTokenData?.deviceId!,
             expToPass as Date,
             iatToPass as Date,
-            // new Date(decodedRefreshTokenData?.iat! * 1000),
-            // new Date(decodedRefreshTokenData?.exp! * 1000),
         );
 
-        if (sessionId) {
-            console.warn("Session found!!!");
-        }
+        // if (sessionId) {
+        //     console.warn("Session found!!!");
+        // }
 
         if (!sessionId) {
             return res.status(HttpStatus.Unauthorized).json({
@@ -95,7 +92,7 @@ export const refreshTokenGuard = async (
             });
         }
     } catch (error) {
-        res.status(HttpStatus.InternalServerError).json({
+        return res.status(HttpStatus.InternalServerError).json({
             error: "Internal server error during await dataCommandRepository.findSession call inside refreshTokenGuard",
         });
     }

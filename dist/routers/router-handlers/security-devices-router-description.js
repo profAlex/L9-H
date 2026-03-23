@@ -14,7 +14,7 @@ const id_names_1 = require("../util-enums/id-names");
 const http_statuses_1 = require("../../common/http-statuses/http-statuses");
 const security_devices_service_1 = require("../../service-layer(BLL)/security-devices-service");
 const removeSessionById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield security_devices_service_1.securityDevicesService.removeSessionById(req.sessionId);
+    const result = yield security_devices_service_1.securityDevicesService.removeSessionById(req.params[id_names_1.IdParamName.DeviceId]);
     if (result === undefined) {
         res.sendStatus(http_statuses_1.HttpStatus.NotFound);
     }

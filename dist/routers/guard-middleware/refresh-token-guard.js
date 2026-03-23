@@ -56,12 +56,13 @@ const refreshTokenGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, 
     const decodedRefreshTokenData = yield jwt_service_1.jwtService.decodeRefreshToken(refreshToken);
     let sessionId;
     const sessionsList = yield query_repository_1.dataQueryRepository.utilGetAllSessionRecords();
-    // console.warn("SHOWING SESSIONS: ", sessionsList)
     const iatToPass = new Date((decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.iat) * 1000);
     const expToPass = new Date((decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.exp) * 1000);
     try {
         sessionId = yield command_repository_1.dataCommandRepository.findSession(decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.userId, decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.deviceId, expToPass, iatToPass);
-        // console.warn("!!!HERE!!!");
+        // if (sessionId) {
+        //     console.warn("Session found!!!");
+        // }
         if (!sessionId) {
             return res.status(http_statuses_1.HttpStatus.Unauthorized).json({
                 error: `Session doesnt exist or expired token`,
@@ -76,7 +77,7 @@ const refreshTokenGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, 
         }
     }
     catch (error) {
-        res.status(http_statuses_1.HttpStatus.InternalServerError).json({
+        return res.status(http_statuses_1.HttpStatus.InternalServerError).json({
             error: "Internal server error during await dataCommandRepository.findSession call inside refreshTokenGuard",
         });
     }

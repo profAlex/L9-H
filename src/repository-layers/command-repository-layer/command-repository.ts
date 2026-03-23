@@ -1280,21 +1280,42 @@ export const dataCommandRepository = {
         }
     },
 
-    async removeSession(sessionId: ObjectId): Promise<undefined | null> {
+    async removeSessionBySessionId(sessionId: ObjectId): Promise<undefined | null> {
         try {
             const result = await sessionsDataStorage.deleteOne({
                 _id: sessionId,
             });
 
             if (!result.acknowledged) {
-                console.error("Couldn't remove session inside removeSeesion");
+                console.error("Couldn't remove session inside removeSessionBySessionId");
 
                 return undefined;
             }
 
             return null;
         }catch(error) {
-            console.error("Unknown error inside removeSeesion", error);
+            console.error("Unknown error inside removeSessionBySessionId", error);
+
+            return undefined;
+        }
+    },
+
+
+    async removeSessionByDeviceId(deviceId: string): Promise<undefined | null> {
+        try {
+            const result = await sessionsDataStorage.deleteOne({
+                deviceId: deviceId,
+            });
+
+            if (!result.acknowledged) {
+                console.error("Couldn't remove session inside removeSessionByDeviceId");
+
+                return undefined;
+            }
+
+            return null;
+        }catch(error) {
+            console.error("Unknown error inside removeSessionByDeviceId", error);
 
             return undefined;
         }
