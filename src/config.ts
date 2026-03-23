@@ -125,12 +125,12 @@ const getConfig = (): Config => {
 
 export const envConfig = getConfig();
 
-{"error":"Session doesnt exist or expired token",
-    "requestData":
-    {
-    "userId":"69c0f984652c80d52b4dff31","deviceId":"1d0ed794-1794-4511-84b6-369108de28e9","expToPass":"2026-03-23T08:28:20.000Z","iatToPass":"2026-03-23T08:28:00.000Z"
-},
-    "metaData":[
-        {"_id":"69c0f990652c80d52b4dff35","userId":"69c0f984652c80d52b4dff31","deviceId":"b8f361ca-b7aa-495a-a40f-ebd68167d7a3","issuedAt":"2026-03-23T08:28:00.000Z","deviceName":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/103.0","deviceIp":"18.195.23.171","expiresAt":"2026-03-23T08:28:20.000Z"}
-    ,{"_id":"69c0f991652c80d52b4dff37","userId":"69c0f984652c80d52b4dff31","deviceId":"085c23fd-1f2a-4e35-87db-95de026bd71f","issuedAt":"2026-03-23T08:28:01.000Z","deviceName":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36","deviceIp":"18.195.23.171","expiresAt":"2026-03-23T08:28:21.000Z"},
-    {"_id":"69c0f991652c80d52b4dff39","userId":"69c0f984652c80d52b4dff31","deviceId":"65f6aae6-68cf-45db-a5ac-f3dcc7023c26","issuedAt":"2026-03-23T08:28:01.000Z","deviceName":"Mozilla/5.0 (Macintosh; Intel Mac OS X 12_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Safari/605.1.15","deviceIp":"18.195.23.171","expiresAt":"2026-03-23T08:28:21.000Z"}]}
+// {"error":"Session doesnt exist or expired token",
+//     "requestData":
+//     {
+//     "userId":"69c0f984652c80d52b4dff31","deviceId":"1d0ed794-1794-4511-84b6-369108de28e9","expToPass":"2026-03-23T08:28:20.000Z","iatToPass":"2026-03-23T08:28:00.000Z"
+// },
+//     "metaData":[
+//         {"_id":"69c0f990652c80d52b4dff35","userId":"69c0f984652c80d52b4dff31","deviceId":"b8f361ca-b7aa-495a-a40f-ebd68167d7a3","issuedAt":"2026-03-23T08:28:00.000Z","deviceName":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/103.0","deviceIp":"18.195.23.171","expiresAt":"2026-03-23T08:28:20.000Z"}
+//     ,{"_id":"69c0f991652c80d52b4dff37","userId":"69c0f984652c80d52b4dff31","deviceId":"085c23fd-1f2a-4e35-87db-95de026bd71f","issuedAt":"2026-03-23T08:28:01.000Z","deviceName":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36","deviceIp":"18.195.23.171","expiresAt":"2026-03-23T08:28:21.000Z"},
+//     {"_id":"69c0f991652c80d52b4dff39","userId":"69c0f984652c80d52b4dff31","deviceId":"65f6aae6-68cf-45db-a5ac-f3dcc7023c26","issuedAt":"2026-03-23T08:28:01.000Z","deviceName":"Mozilla/5.0 (Macintosh; Intel Mac OS X 12_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Safari/605.1.15","deviceIp":"18.195.23.171","expiresAt":"2026-03-23T08:28:21.000Z"}]}
