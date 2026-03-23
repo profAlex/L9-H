@@ -1,4 +1,4 @@
-import { Collection, Db, MongoClient } from "mongodb";
+import { Collection, Db, IndexDescriptionInfo, MongoClient } from "mongodb";
 import { BlogViewModel } from "../routers/router-types/blog-view-model";
 import { PostViewModel } from "../routers/router-types/post-view-model";
 import { UserCollectionStorageModel } from "../routers/router-types/user-storage-model";
@@ -35,6 +35,10 @@ export let sessionsDataStorage: Collection<SessionStorageModel>;
 export let requestsRestrictionDataStorage: Collection<RequestRestrictionStorageModel>;
 
 export async function runDB() {
+    // console.log('⏱️ runDB() called at:', new Date().toISOString());
+    // const stack = new Error().stack;
+    // console.log('Call stack:', stack);
+
     client = new MongoClient(URI);
     db = client.db(DB_NAME);
 
@@ -130,14 +134,33 @@ export async function runDB() {
     //     },
     // );
 
+    // Для sessions — только свой индекс
+    await setupCollectionIndexes(
+        sessionsDataStorage,
+        'sessions',
+        [
+            {
+                field: 'createdAt',
+                name: 'createdAt_1',
+                ttl: envConfig.refreshTokenLifetime+5,
+                description: 'TTL index for sessions (25s)'
+            }
+        ]
+    );
 
-
-
-    // Настройка индексов
-    await setupCollectionIndexes(sessionsDataStorage, 'sessions');
-    await setupCollectionIndexes(requestsRestrictionDataStorage, 'requests_restrictions');
-
-    
+// Для requests_restrictions — только свой индекс
+    await setupCollectionIndexes(
+        requestsRestrictionDataStorage,
+        'requests_restrictions',
+        [
+            {
+                field: 'dateOfRequest',
+                name: 'dateOfRequest_1',
+                ttl: 15,
+                description: 'TTL index for requests_restrictions (15s)'
+            }
+        ]
+    );
     
     try {
         await client.connect();
@@ -165,77 +188,67 @@ export async function closeDB() {
 
 
 async function setupCollectionIndexes(
-    collection:
-        | Collection<SessionStorageModel>
-        | Collection<RequestRestrictionStorageModel>,
+    collection: Collection<SessionStorageModel> | Collection<RequestRestrictionStorageModel>,
     collectionName: string,
-) {
-    const indexesToSetup = [
-        {
-            field: "createdAt",
-            name: "createdAt_1",
-            ttl: 25,
-            description: `TTL index for ${collectionName} (25s)`,
-        },
-        {
-            field: "dateOfRequest",
-            name: "dateOfRequest_1",
-            ttl: 15,
-            description: `TTL index for ${collectionName} (15s)`,
-        },
-    ];
+    indexesToSetup: Array<{
+        field: string;
+        name: string;
+        ttl: number;
+        description: string;
+    }>
+): Promise<void> {
+    // Фильтруем индексы: берём только те, что принадлежат этой коллекции
+    const relevantIndexes = indexesToSetup.filter(index => {
+        if (collectionName === 'sessions') {
+            return index.name === 'createdAt_1';
+        } else if (collectionName === 'requests_restrictions') {
+            return index.name === 'dateOfRequest_1';
+        }
+        return false;
+    });
 
-    for (const indexConfig of indexesToSetup) {
+    for (const indexConfig of relevantIndexes) {
         try {
             const existingIndexes = await collection.indexes();
-            const existingIndex = existingIndexes.find(
-                (idx) => idx.name === indexConfig.name,
-            );
+            const existingIndex = existingIndexes.find(idx => idx.name === indexConfig.name);
 
             if (!existingIndex) {
-                // Индекс не существует — создаём с нужными параметрами
-                console.log(
-                    `Creating index ${indexConfig.name} for ${collectionName}`,
-                );
+                console.log(`Creating index ${indexConfig.name} for ${collectionName}`);
                 await collection.createIndex(
                     { [indexConfig.field]: 1 },
                     {
                         name: indexConfig.name,
-                        expireAfterSeconds: indexConfig.ttl,
-                    },
+                        expireAfterSeconds: indexConfig.ttl
+                    }
                 );
                 console.log(`✓ Index ${indexConfig.name} created successfully`);
             } else if (existingIndex.expireAfterSeconds !== indexConfig.ttl) {
-                // Индекс существует, но с другим TTL — обновляем
                 console.log(
-                    `Updating index ${indexConfig.name}: TTL ${existingIndex.expireAfterSeconds} → ${indexConfig.ttl}`,
+                    `Updating index ${indexConfig.name}: TTL ${existingIndex.expireAfterSeconds} → ${indexConfig.ttl}`
                 );
-
-                // Удаляем старый индекс
                 await collection.dropIndex(indexConfig.name);
-                // Создаём новый с правильным TTL
                 await collection.createIndex(
                     { [indexConfig.field]: 1 },
                     {
                         name: indexConfig.name,
-                        expireAfterSeconds: indexConfig.ttl,
-                    },
+                        expireAfterSeconds: indexConfig.ttl
+                    }
                 );
                 console.log(`✓ Index ${indexConfig.name} updated successfully`);
             } else {
-                // Индекс уже существует с правильными параметрами
                 console.log(
-                    `ℹ️ Index ${indexConfig.name} already exists with correct TTL (${indexConfig.ttl}s)`,
+                    `ℹ️ Index ${indexConfig.name} already exists with correct TTL (${indexConfig.ttl}s)`
                 );
             }
         } catch (error) {
             console.error(
                 `❌ Error processing index ${indexConfig.name}:`,
-                error,
+                error
             );
-            throw error; // Перебрасываем ошибку для остановки инициализации при фатальной проблеме
+            throw error;
         }
     }
 }
+
 
 export { db };
