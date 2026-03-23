@@ -1,7 +1,8 @@
-import express from "express";
 import { setupApp } from "./setup-app";
-import { runDB } from "./db/mongo.db";
+import { closeDB, runDB } from "./db/mongo.db";
 import { envConfig } from "./config";
+import { TESTING_PATH } from "./routers/pathes/router-pathes";
+import express, { Request, Response, Express } from "express";
 
 const app = express();
 setupApp(app);
@@ -18,5 +19,28 @@ export const startApp = async () => {
 };
 
 startApp();
+
+process.on('SIGINT', async () => {
+  console.log('\nReceived SIGINT (Ctrl+C). Shutting down gracefully...');
+
+  app.delete(`${TESTING_PATH}/all-data`, (req: Request, res: Response) => {
+    res.status(200).send("All good!");
+  });
+
+  await closeDB();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM. Shutting down gracefully...');
+
+  app.delete(`${TESTING_PATH}/all-data`, (req: Request, res: Response) => {
+    res.status(200).send("All good!");
+  });
+
+  await closeDB();
+  process.exit(0);
+});
+
 
 module.exports = app;

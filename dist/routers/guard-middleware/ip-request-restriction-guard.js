@@ -15,31 +15,37 @@ const mongodb_1 = require("mongodb");
 const command_repository_1 = require("../../repository-layers/command-repository-layer/command-repository");
 const query_repository_1 = require("../../repository-layers/query-repository-layer/query-repository");
 const ipRequestRestrictionGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    // создаем объект при обращении данные для сессии
-    const requestId = new mongodb_1.ObjectId();
-    const deviceName = req.get("User-Agent") || ""; // или req.headers['user-agent'] - обязательно с малыми, т.к. по стандарту http все приводится к строчным. Методы .get и .header же осуществляют приведение к строчным(маленьким) под капотом
-    const deviceIp = req.ip || "";
-    const url = req.originalUrl || "";
-    const checkIfCallAllowed = yield query_repository_1.dataQueryRepository.calculateIfCallAllowed(url, deviceIp, deviceName);
-    if (!checkIfCallAllowed) {
-        return res.status(http_statuses_1.HttpStatus.TooManyRequests).json({
-            error: `Too many requests on URL: ${url}`,
-        });
+    try {
+        const requestId = new mongodb_1.ObjectId();
+        const deviceName = req.get("User-Agent") || "";
+        const deviceIp = req.ip || "";
+        const url = req.originalUrl || "";
+        const checkIfCallAllowed = yield query_repository_1.dataQueryRepository.calculateIfCallAllowed(url, deviceIp, deviceName);
+        if (!checkIfCallAllowed) {
+            return res.status(http_statuses_1.HttpStatus.TooManyRequests).json({
+                error: `Too many requests on URL: ${url}`,
+            });
+        }
+        const newUrlCall = {
+            _id: requestId,
+            deviceIp: deviceIp,
+            deviceName: deviceName,
+            calledURL: url,
+            dateOfRequest: new Date(),
+        };
+        const insertedUrlCall = yield command_repository_1.dataCommandRepository.insertUrlCall(newUrlCall);
+        if (!insertedUrlCall) {
+            return res.status(http_statuses_1.HttpStatus.InternalServerError).json({
+                error: "Internal server error during insertUrlCall",
+            });
+        }
+        return next();
     }
-    const newUrlCall = {
-        _id: requestId,
-        deviceIp: deviceIp,
-        deviceName: deviceName,
-        calledURL: url,
-        dateOfRequest: new Date(),
-    };
-    const insertedUrlCall = yield command_repository_1.dataCommandRepository.insertUrlCall(newUrlCall);
-    if (!insertedUrlCall) {
+    catch (error) {
+        console.error('Error in ipRequestRestrictionGuard:', error);
         return res.status(http_statuses_1.HttpStatus.InternalServerError).json({
-            error: "Internal server error during await dataCommandRepository.insertUrlCall(newUrlCall) call inside ipRequestRestrictionGuard",
+            error: 'Internal server error in ipRequestRestrictionGuard',
         });
     }
-    next();
-    return next();
 });
 exports.ipRequestRestrictionGuard = ipRequestRestrictionGuard;

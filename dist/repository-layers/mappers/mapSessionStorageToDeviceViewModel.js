@@ -5,7 +5,7 @@ const mapSessionStorageToDeviceViewModel = (sessionsData) => {
     return sessionsData.map(object => ({
         ip: object.deviceIp,
         title: object.deviceName,
-        lastActiveDate: object.issuedAt.toString(),
+        lastActiveDate: object.issuedAt.toISOString(),
         deviceId: object.deviceId,
     }));
 };

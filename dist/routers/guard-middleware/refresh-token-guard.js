@@ -13,6 +13,7 @@ exports.refreshTokenGuard = void 0;
 const http_statuses_1 = require("../../common/http-statuses/http-statuses");
 const jwt_service_1 = require("../../adapters/verification/jwt-service");
 const command_repository_1 = require("../../repository-layers/command-repository-layer/command-repository");
+const query_repository_1 = require("../../repository-layers/query-repository-layer/query-repository");
 const refreshTokenGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { refreshToken } = req.cookies || {}; // || {} введено для тех случаев если забыли например подключить cooke-parcer, тогда поля cookies в структуре req вообще будет отсутствовать и тогда undefined крашнет приложение
     if (!refreshToken) {
@@ -39,12 +40,13 @@ const refreshTokenGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, 
     // 2. токен может быть создан другой версией сервиса с другой структурой;
     // 3. данные могут быть повреждены при передаче;
     // 4. тип в TypeScript существует только до компиляции — в JS‑коде он стирается.
-    if (typeof rawPayload.deviceId !== 'string') {
+    if (typeof rawPayload.deviceId !== "string") {
         return res.status(http_statuses_1.HttpStatus.Unauthorized).json({
             error: `Improper refresh token format. Invalid deviceId type in refresh token.`,
         });
     }
-    if (typeof rawPayload.iat !== 'number' || typeof rawPayload.exp !== 'number') {
+    if (typeof rawPayload.iat !== "number" ||
+        typeof rawPayload.exp !== "number") {
         return res.status(http_statuses_1.HttpStatus.Unauthorized).json({
             error: `Improper refresh token format. Invalid deviceId type in refresh token. Invalid iat/exp fields in refresh token.`,
         });
@@ -53,11 +55,23 @@ const refreshTokenGuard = (req, res, next) => __awaiter(void 0, void 0, void 0, 
     const payload = rawPayload;
     const decodedRefreshTokenData = yield jwt_service_1.jwtService.decodeRefreshToken(refreshToken);
     let sessionId;
+    const sessionsList = yield query_repository_1.dataQueryRepository.utilGetAllSessionRecords();
+    // console.warn("SHOWING SESSIONS: ", sessionsList)
+    const iatToPass = new Date((decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.iat) * 1000);
+    const expToPass = new Date((decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.exp) * 1000);
     try {
-        sessionId = yield command_repository_1.dataCommandRepository.findSession(decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.userId, decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.deviceId, new Date((decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.iat) * 1000), new Date((decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.exp) * 1000));
+        sessionId = yield command_repository_1.dataCommandRepository.findSession(decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.userId, decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.deviceId, expToPass, iatToPass);
+        // console.warn("!!!HERE!!!");
         if (!sessionId) {
             return res.status(http_statuses_1.HttpStatus.Unauthorized).json({
                 error: `Session doesnt exist or expired token`,
+                requestData: {
+                    userId: decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.userId,
+                    deviceId: decodedRefreshTokenData === null || decodedRefreshTokenData === void 0 ? void 0 : decodedRefreshTokenData.deviceId,
+                    expToPass: expToPass,
+                    iatToPass: iatToPass,
+                },
+                metaData: sessionsList,
             });
         }
     }

@@ -13,7 +13,6 @@ exports.db = exports.requestsRestrictionDataStorage = exports.sessionsDataStorag
 exports.runDB = runDB;
 exports.closeDB = closeDB;
 const mongodb_1 = require("mongodb");
-const config_1 = require("../config");
 const DB_NAME = "bloggers_db";
 exports.BLOGGERS_COLLECTION_NAME = "bloggers_collection";
 exports.POSTS_COLLECTION_NAME = "posts_collection";
@@ -43,10 +42,57 @@ function runDB() {
         });
         // настройка автоудаления сессий
         exports.sessionsDataStorage = db.collection(exports.SESSIONS_COLLECTION_NAME);
+        // const existingIndexes = await sessionsDataStorage.indexes();
+        // const existingIndex = existingIndexes.find(idx => idx.name === "createdAt");
+        //
+        // if (!existingIndex) {
+        //     // Создаём индекс, если его нет
+        //     await sessionsDataStorage.createIndex(
+        //         { createdAt: 1 },
+        //         { name: "createdAt", expireAfterSeconds: 25 }
+        //     );
+        // } else if (existingIndex.expireAfterSeconds !== 25) {
+        //     // Удаляем старый и создаём новый, если TTL не совпадает
+        //     await sessionsDataStorage.dropIndex("createdAt");
+        //     await sessionsDataStorage.createIndex(
+        //         { createdAt: 1 },
+        //         { name: "createdAt", expireAfterSeconds: 25 }
+        //     )
+        // }
+        // const indexes = await sessionsDataStorage.indexes();
+        // const indexExists = indexes.some(idx => idx.name === 'createdAt');
+        //
+        // if (indexExists) {
+        //     await sessionsDataStorage.dropIndex('createdAt');
+        // } else {
+        //     console.log('Index "createdAt" not found — skipping drop.');
+        // }
+        // try {
+        //     await sessionsDataStorage.dropIndex('createdAt_1');
+        // } catch (error) {
+        //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+        // }
+        //
+        // try {
+        //     await sessionsDataStorage.dropIndex('createdAt');
+        // } catch (error) {
+        //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+        // }
         yield exports.sessionsDataStorage.createIndex({ createdAt: 1 }, // поле для индексации
         {
-            expireAfterSeconds: config_1.envConfig.refreshTokenLifetime, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+            expireAfterSeconds: (20), // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         });
+        // try {
+        //     await sessionsDataStorage.dropIndex('dateOfRequest_1');
+        // } catch (error) {
+        //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+        // }
+        //
+        // try {
+        //     await sessionsDataStorage.dropIndex('dateOfRequest');
+        // } catch (error) {
+        //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+        // }
         exports.requestsRestrictionDataStorage = db.collection(exports.REQUESTS_RESTRICTIONS_COLLECTION_NAME);
         yield exports.requestsRestrictionDataStorage.createIndex({ dateOfRequest: 1 }, // поле для индексации
         {

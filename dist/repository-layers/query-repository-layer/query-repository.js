@@ -300,9 +300,16 @@ exports.dataQueryRepository = {
     },
     findByLoginOrEmail(loginOrEmail) {
         return __awaiter(this, void 0, void 0, function* () {
-            return mongo_db_1.usersCollection.findOne({
-                $or: [{ email: loginOrEmail }, { login: loginOrEmail }],
-            });
+            try {
+                const result = yield mongo_db_1.usersCollection.findOne({
+                    $or: [{ email: loginOrEmail }, { login: loginOrEmail }],
+                });
+                return result;
+            }
+            catch (error) {
+                console.error('Error finding user by login or email:', error);
+                return null;
+            }
         });
     },
     // *****************************
@@ -322,6 +329,11 @@ exports.dataQueryRepository = {
     // *****************************
     // методы для security-devices
     // *****************************
+    utilGetAllSessionRecords() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield mongo_db_1.sessionsDataStorage.find({}).toArray();
+        });
+    },
     getActiveDevicesList(userId) {
         return __awaiter(this, void 0, void 0, function* () {
             const currentDate = new Date();

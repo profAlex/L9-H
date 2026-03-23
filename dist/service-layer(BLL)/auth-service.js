@@ -24,8 +24,10 @@ exports.authService = {
     loginUser(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { loginOrEmail, password } = req.body;
+            // console.warn("PRE-FIND-BY?");
             const user = yield query_repository_1.dataQueryRepository.findByLoginOrEmail(loginOrEmail);
-            console.log("USER?", user === null || user === void 0 ? void 0 : user.login);
+            // console.warn("USER?", user);
+            // console.warn("USER?", user?.login);
             if (!user)
                 return {
                     data: null,

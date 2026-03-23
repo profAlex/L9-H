@@ -87,6 +87,7 @@ const refreshTokenOnDemand = (req, res) => __awaiter(void 0, void 0, void 0, fun
     const pairOfTokens = yield auth_service_1.authService.refreshTokenOnDemand(
     // req.cookies.refreshToken,
     req.deviceId, req.user.userId, req.sessionId);
+    // console.warn("!!!HERE!!!");
     if (!pairOfTokens.data) {
         console.error("Error description: ", pairOfTokens === null || pairOfTokens === void 0 ? void 0 : pairOfTokens.statusDescription, JSON.stringify(pairOfTokens.errorsMessages));
         return res

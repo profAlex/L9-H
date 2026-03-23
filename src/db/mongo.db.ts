@@ -59,20 +59,74 @@ export async function runDB() {
         },
     );
 
+
+
     // настройка автоудаления сессий
     sessionsDataStorage = db.collection<SessionStorageModel>(SESSIONS_COLLECTION_NAME);
+
+    // const existingIndexes = await sessionsDataStorage.indexes();
+    // const existingIndex = existingIndexes.find(idx => idx.name === "createdAt");
+    //
+    // if (!existingIndex) {
+    //     // Создаём индекс, если его нет
+    //     await sessionsDataStorage.createIndex(
+    //         { createdAt: 1 },
+    //         { name: "createdAt", expireAfterSeconds: 25 }
+    //     );
+    // } else if (existingIndex.expireAfterSeconds !== 25) {
+    //     // Удаляем старый и создаём новый, если TTL не совпадает
+    //     await sessionsDataStorage.dropIndex("createdAt");
+    //     await sessionsDataStorage.createIndex(
+    //         { createdAt: 1 },
+    //         { name: "createdAt", expireAfterSeconds: 25 }
+    //     )
+    // }
+    // const indexes = await sessionsDataStorage.indexes();
+    // const indexExists = indexes.some(idx => idx.name === 'createdAt');
+    //
+    // if (indexExists) {
+    //     await sessionsDataStorage.dropIndex('createdAt');
+    // } else {
+    //     console.log('Index "createdAt" not found — skipping drop.');
+    // }
+
+    // try {
+    //     await sessionsDataStorage.dropIndex('createdAt_1');
+    // } catch (error) {
+    //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+    // }
+    //
+    // try {
+    //     await sessionsDataStorage.dropIndex('createdAt');
+    // } catch (error) {
+    //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+    // }
+
     await sessionsDataStorage.createIndex(
         { createdAt: 1 }, // поле для индексации
         {
-            expireAfterSeconds: envConfig.refreshTokenLifetime+5, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+            expireAfterSeconds: 25, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         },
     );
+
+
+    // try {
+    //     await sessionsDataStorage.dropIndex('dateOfRequest_1');
+    // } catch (error) {
+    //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+    // }
+    //
+    // try {
+    //     await sessionsDataStorage.dropIndex('dateOfRequest');
+    // } catch (error) {
+    //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
+    // }
 
     requestsRestrictionDataStorage = db.collection<RequestRestrictionStorageModel>(REQUESTS_RESTRICTIONS_COLLECTION_NAME);
     await requestsRestrictionDataStorage.createIndex(
         { dateOfRequest: 1 }, // поле для индексации
         {
-            expireAfterSeconds: 20, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+            expireAfterSeconds: 15, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         },
     );
 
