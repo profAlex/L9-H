@@ -78,7 +78,7 @@ export const ipRequestRestrictionGuardForRegistration = async (
             url,
             deviceIp,
             deviceName,
-            7
+            8
         );
 
         // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
@@ -133,7 +133,7 @@ export const ipRequestRestrictionGuardForResending = async (
             url,
             deviceIp,
             deviceName,
-            7
+            8
         );
 
         // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
