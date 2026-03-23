@@ -490,9 +490,10 @@ export const dataQueryRepository = {
         url: string,
         deviceIp: string,
         deviceName: string,
+        timeout: number
     ): Promise<boolean> {
         // Определяем временную границу: сейчас минус 10 секунд
-        const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+        const tenSecondsAgo = new Date(Date.now() - timeout * 1000);
 
         try {
             // Подсчитываем количество записей, соответствующих условиям:

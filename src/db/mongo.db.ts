@@ -156,7 +156,7 @@ export async function runDB() {
             {
                 field: 'dateOfRequest',
                 name: 'dateOfRequest_1',
-                ttl: 15,
+                ttl: 30,
                 description: 'TTL index for requests_restrictions (15s)'
             }
         ]
