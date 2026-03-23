@@ -64,7 +64,7 @@ export async function runDB() {
     await sessionsDataStorage.createIndex(
         { createdAt: 1 }, // поле для индексации
         {
-            expireAfterSeconds: envConfig.refreshTokenLifetime, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+            expireAfterSeconds: envConfig.refreshTokenLifetime+5, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         },
     );
 
@@ -72,7 +72,7 @@ export async function runDB() {
     await requestsRestrictionDataStorage.createIndex(
         { dateOfRequest: 1 }, // поле для индексации
         {
-            expireAfterSeconds: 11, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+            expireAfterSeconds: 20, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
         },
     );
 
