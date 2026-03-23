@@ -18,11 +18,15 @@ export const ipRequestRestrictionGuard = async (
         const deviceIp = req.ip || "";
         const url = req.originalUrl || "";
 
+
         const checkIfCallAllowed = await dataQueryRepository.calculateIfCallAllowed(
             url,
             deviceIp,
             deviceName,
         );
+
+
+        // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
 
         if (!checkIfCallAllowed) {
             return res.status(HttpStatus.TooManyRequests).json({
@@ -44,6 +48,9 @@ export const ipRequestRestrictionGuard = async (
                 error: "Internal server error during insertUrlCall",
             });
         }
+
+        //const restrictedSessionsList = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
+        //console.warn("AMOUNT OF ACTIVE SESSION: ", restrictedSessionsList.length);
 
         return next();
     } catch (error) {

@@ -39,6 +39,7 @@ import { mapSingleCommentToViewModel } from "../mappers/map-to-CommentViewModel"
 import { DeviceViewModel } from "../../routers/router-types/security-devices-device-view-model";
 import { mapSessionStorageToDeviceViewModel } from "../mappers/mapSessionStorageToDeviceViewModel";
 import { SessionStorageModel } from "../../routers/router-types/auth-SessionStorageModel";
+import { RequestRestrictionStorageModel } from "../../routers/router-types/auth-RequestRestrictionStorageModel";
 
 async function findBlogByPrimaryKey(
     id: ObjectId,
@@ -507,13 +508,17 @@ export const dataQueryRepository = {
             });
 
             // Возвращаем true, если количество запросов <= 5 (вызов разрешён),
-            // false — если > 5 (вызов запрещён)
-            return count <= 5;
+            // false — если >= 5 (вызов запрещён)
+            return count < 5;
         } catch (error) {
             console.error("Error while checking request restrictions:", error);
             // В случае ошибки считаем, что вызов запрещён (fail‑safe)
             return false;
         }
+    },
+
+    async utilGetAllRestrictedSessionRecords():Promise<Array<RequestRestrictionStorageModel>> {
+        return await requestsRestrictionDataStorage.find({}).toArray();
     },
 
     // *****************************

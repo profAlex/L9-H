@@ -95,13 +95,15 @@ export const registrationAttemptByUser = async (
         req.body,
     );
 
-    if (registrationResult.statusCode !== HttpStatus.Ok) {
+    if (registrationResult.statusCode !== HttpStatus.Ok && registrationResult.statusCode !== HttpStatus.NoContent) {
         // console.error(
         //     "Error description: ",
         //     registrationResult?.statusDescription,
         //     JSON.stringify(registrationResult.errorsMessages)
         // );
-
+        console.warn(
+            `"ERROR: ${registrationResult.statusCode} IN FIELD: ${registrationResult.errorsMessages[0].field} MESSAGE:  ${registrationResult.errorsMessages[0].message}`,
+        );
         return res
             .status(registrationResult.statusCode)
             .send({ errorsMessages: registrationResult.errorsMessages });

@@ -13,8 +13,9 @@ import { dataQueryRepository } from "../src/repository-layers/query-repository-l
 import { HttpStatus } from "../src/common/http-statuses/http-statuses";
 import { jwtService } from "../src/adapters/verification/jwt-service";
 import { JwtRefreshPayloadType } from "../src/adapters/verification/payload-type";
+import { RegistrationUserInputModel } from "../src/routers/router-types/auth-registration-input-model";
 
-describe("Test API for managing login, registration and registration-confirmation services", () => {
+describe("Test API for managing session life-time and updated refresh-token renewal system", () => {
     const testApp = express();
     setupApp(testApp);
 
@@ -407,12 +408,15 @@ describe("Test API for managing login, registration and registration-confirmatio
         expect(listOfAllSessions.length).toBe(4); // количество сессий не должно измениться
     });
 
+
     // Удаляем девайс 2 из refreshTokenValue2 (для этого передаем newRefreshTokenValue1 девайса 1). Запрашиваем список девайсов. Проверяем, что девайс 2 отсутствует в списке;
     it("DELETE '/api/security/devices/:deviceId' - should delete deviceId which is inside refreshTokenValue2 (successful)", async () => {
         const listOfAllSessions =
             await dataQueryRepository.utilGetAllSessionRecords();
-        console.log("LIST OF ALL SESSIONS BEFORE THE DELETION: ", listOfAllSessions);
-
+        console.log(
+            "LIST OF ALL SESSIONS BEFORE THE DELETION: ",
+            listOfAllSessions,
+        );
 
         if (!refreshTokenValue2) {
             throw new Error("Refresh cookie is undefined");
@@ -447,7 +451,10 @@ describe("Test API for managing login, registration and registration-confirmatio
 
         const listOfAllSessions1 =
             await dataQueryRepository.utilGetAllSessionRecords();
-        console.log("LIST OF ALL SESSIONS AFTER THE DELETION: ", listOfAllSessions1);
+        console.log(
+            "LIST OF ALL SESSIONS AFTER THE DELETION: ",
+            listOfAllSessions1,
+        );
 
         // количество сессий должно сократиться
         expect(listOfAllSessions1.length).toBe(3);
@@ -460,4 +467,5 @@ describe("Test API for managing login, registration and registration-confirmatio
             }
         });
     });
+
 });

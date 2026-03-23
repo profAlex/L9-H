@@ -195,13 +195,12 @@ export const authService = {
                         "authService -> registerNewUser -> if(ifUserLoginExists)",
                     errorsMessages: [
                         {
-                            field: "login",
+                            field: "authService -> registerNewUser -> if(ifUserLoginExists)",
                             message: "Email or Login already exists!!!",
                         },
                     ],
                 };
             }
-
             if (ifUserEmailExists) {
                 return {
                     data: null,
