@@ -21,7 +21,7 @@ import {
 import { refreshTokenGuard } from "./guard-middleware/refresh-token-guard";
 import {
     ipRequestRestrictionGuard,
-    ipRequestRestrictionGuardForRegistration
+    ipRequestRestrictionGuardForRegistration, ipRequestRestrictionGuardForResending
 } from "./guard-middleware/ip-request-restriction-guard";
 
 export const authRouter = Router();
@@ -56,7 +56,7 @@ authRouter.post(
 // Resend Registration confirmation email
 authRouter.post(
     "/registration-email-resending",
-    ipRequestRestrictionGuard,
+    ipRequestRestrictionGuardForResending,
     registrationResentConfirmationValidator,
     inputErrorManagementMiddleware,
     resendRegistrationConfirmation,
