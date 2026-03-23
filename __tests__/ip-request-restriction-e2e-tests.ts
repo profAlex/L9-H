@@ -191,7 +191,7 @@ describe("Test IP request restriction system", () => {
         const delay = (ms: number) =>
             new Promise((resolve) => setTimeout(resolve, ms));
 
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 5; i++) {
             const res = await request(testApp)
                 .post(`${AUTH_PATH}/registration`)
                 .set("User-Agent", "CustomUserAgentHeader/1.0")
@@ -209,10 +209,45 @@ describe("Test IP request restriction system", () => {
 
         expect(
             mailerService.sendConfirmationRegisterEmail,
-        ).toHaveBeenCalledTimes(6);
+        ).toHaveBeenCalledTimes(5);
 
         const restrictedSessionsList = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
-        console.log("RESTRICTED SESSION STORAGE: ", restrictedSessionsList);
+        console.log("RESTRICTED SESSION STORAGE 1: ", restrictedSessionsList);
+
+        const res = await request(testApp)
+            .post(`${AUTH_PATH}/registration`)
+            .set("User-Agent", "CustomUserAgentHeader/1.0")
+            .send(arrayOfUserRegistrationData[5]);
+
+        expect(res.status).toBe(HttpStatus.TooManyRequests);
+        expect(
+            mailerService.sendConfirmationRegisterEmail,
+        ).toHaveBeenCalled();
+
+        const res1 = await request(testApp)
+            .post(`${AUTH_PATH}/registration`)
+            .set("User-Agent", "CustomUserAgentHeader/1.0")
+            .send(arrayOfUserRegistrationData[5]);
+
+        expect(res1.status).toBe(HttpStatus.TooManyRequests);
+        expect(
+            mailerService.sendConfirmationRegisterEmail,
+        ).toHaveBeenCalled();
+
+        await delay(5000); // задержка 1 секунда
+
+        const res2 = await request(testApp)
+            .post(`${AUTH_PATH}/registration`)
+            .set("User-Agent", "CustomUserAgentHeader/1.0")
+            .send(arrayOfUserRegistrationData[5]);
+
+        expect(res2.status).toBe(HttpStatus.NoContent);
+        expect(
+            mailerService.sendConfirmationRegisterEmail,
+        ).toHaveBeenCalled();
+
+        const restrictedSessionsList1 = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
+        console.log("RESTRICTED SESSION STORAGE 2: ", restrictedSessionsList1);
 
     }, 15000);
 

@@ -25,7 +25,6 @@ export const ipRequestRestrictionGuard = async (
             deviceName,
         );
 
-
         // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
 
         if (!checkIfCallAllowed) {
