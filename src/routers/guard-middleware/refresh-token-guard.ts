@@ -62,7 +62,7 @@ export const refreshTokenGuard = async (
 
     let sessionId: ObjectId | null;
 
-    // const sessionsList = await dataQueryRepository.utilGetAllSessionRecords();
+    const sessionsList = await dataQueryRepository.utilGetAllSessionRecords();
     // console.warn("SHOWING SESSIONS: ", sessionsList)
 
     const iatToPass = new Date(decodedRefreshTokenData?.iat! * 1000);
@@ -82,6 +82,14 @@ export const refreshTokenGuard = async (
         if (!sessionId) {
             return res.status(HttpStatus.Unauthorized).json({
                 error: `Session doesnt exist or expired token`,
+                requestData: `Request data: ${{
+                    userId: decodedRefreshTokenData?.userId!,
+                    deviceId: decodedRefreshTokenData?.deviceId!,
+                    expToPass: expToPass as Date,
+                    iatToPass: iatToPass as Date,
+                }}`,
+                metaData: `Objects inside Mongo: ${sessionsList}`,
+
             });
         }
     } catch (error) {
