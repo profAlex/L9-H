@@ -113,7 +113,7 @@ describe("Test API for managing login, registration and registration-confirmatio
             .post(`${AUTH_PATH}/login`)
             .send(loginCreds_1);
 
-        //expect(res.status).toBe(HttpStatus.Ok);
+        expect(res.status).toBe(HttpStatus.Ok);
         const entriesCount = Object.entries(res.body).length;
         expect(entriesCount).toBe(1);
 
@@ -564,4 +564,7 @@ describe("Test API for managing login, registration and registration-confirmatio
 
         expect(logoutRes.status).toBe(HttpStatus.Unauthorized);
     });
+
+
+
 });

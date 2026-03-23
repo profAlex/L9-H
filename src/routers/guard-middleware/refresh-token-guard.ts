@@ -78,7 +78,10 @@ export const refreshTokenGuard = async (
             // new Date(decodedRefreshTokenData?.exp! * 1000),
         );
 
-    // console.warn("!!!HERE!!!");
+        if (sessionId) {
+            console.warn("Session found!!!");
+        }
+
         if (!sessionId) {
             return res.status(HttpStatus.Unauthorized).json({
                 error: `Session doesnt exist or expired token`,

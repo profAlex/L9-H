@@ -22,7 +22,7 @@ export const validateDeviceId = async (
 
     // такого нет в swagger, этого случая не описано
     if (!sentDeviceId) {
-        res.status(HttpStatus.BadRequest).json({
+        return res.status(HttpStatus.BadRequest).json({
             error: "deviceId parameter is required",
         });
     }
@@ -36,17 +36,17 @@ export const validateDeviceId = async (
         );
 
         if (!result) {
-            res.status(HttpStatus.NotFound).json({
+            return res.status(HttpStatus.NotFound).json({
                 error: `deviceId ${sentDeviceId} not found`,
             });
         } else if (result.userId !== req.user!.userId) {
             // но при этом мы можем удалить другие deviceId принадлежащие этому же юзеру
-            res.status(HttpStatus.Forbidden).json({
+            return res.status(HttpStatus.Forbidden).json({
                 error: "Attempting to delete the deviceId of other user",
             });
         }
     } catch (err) {
-        res.status(HttpStatus.InternalServerError).json({
+        return res.status(HttpStatus.InternalServerError).json({
             error: "Internal server error during deviceId validation inside validateDeviceId",
         });
     }
