@@ -63,7 +63,9 @@ authRouter.post(
 authRouter.get("/me", accessTokenGuard, provideUserInfo);
 
 // Generate new pair of access and refresh tokens (in cookie client must send correct refreshToken that will be revoked after refreshing)
-authRouter.post("/refresh-token", refreshTokenGuard, refreshTokenOnDemand);
+authRouter.post("/refresh-token",
+    refreshTokenGuard,
+    refreshTokenOnDemand);
 
 // In cookie client must send correct refreshToken that will be revoked
 authRouter.post("/logout", refreshTokenGuard, logoutOnDemand);

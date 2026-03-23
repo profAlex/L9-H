@@ -38,6 +38,7 @@ import { CommentStorageModel } from "../../routers/router-types/comment-storage-
 import { mapSingleCommentToViewModel } from "../mappers/map-to-CommentViewModel";
 import { DeviceViewModel } from "../../routers/router-types/security-devices-device-view-model";
 import { mapSessionStorageToDeviceViewModel } from "../mappers/mapSessionStorageToDeviceViewModel";
+import { SessionStorageModel } from "../../routers/router-types/auth-SessionStorageModel";
 
 async function findBlogByPrimaryKey(
     id: ObjectId,
@@ -452,6 +453,10 @@ export const dataQueryRepository = {
     // *****************************
     // методы для security-devices
     // *****************************
+    async utilGetAllSessionRecords():Promise<Array<SessionStorageModel>> {
+        return await sessionsDataStorage.find({}).toArray();
+    },
+
     async getActiveDevicesList(
         userId: string,
     ): Promise<Array<DeviceViewModel>> {

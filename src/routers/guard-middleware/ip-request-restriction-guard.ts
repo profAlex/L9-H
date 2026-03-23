@@ -49,7 +49,7 @@ export const ipRequestRestrictionGuard = async (
     } catch (error) {
         console.error('Error in ipRequestRestrictionGuard:', error);
         return res.status(HttpStatus.InternalServerError).json({
-            error: 'Internal server error in request restriction guard',
+            error: 'Internal server error in ipRequestRestrictionGuard',
         });
     }
 };

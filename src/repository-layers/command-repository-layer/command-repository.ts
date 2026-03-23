@@ -1219,7 +1219,7 @@ export const dataCommandRepository = {
         issuedAt: Date,
     ): Promise<ObjectId | null> {
         try {
-            const session: WithId<SessionStorageModel> | null =
+            const session=
                 await sessionsDataStorage.findOne(
                     {
                         userId: userId,

@@ -4,13 +4,14 @@ import { jwtService } from "../../adapters/verification/jwt-service";
 import { dataCommandRepository } from "../../repository-layers/command-repository-layer/command-repository";
 import { JwtRefreshPayloadType } from "../../adapters/verification/payload-type";
 import { ObjectId } from "mongodb";
+import { dataQueryRepository } from "../../repository-layers/query-repository-layer/query-repository";
 
 export const refreshTokenGuard = async (
     req: Request,
     res: Response,
     next: NextFunction,
 ) => {
-    const  { refreshToken }  = req.cookies || {}; // || {} введено для тех случаев если забыли например подключить cooke-parcer, тогда поля cookies в структуре req вообще будет отсутствовать и тогда undefined крашнет приложение
+    const { refreshToken } = req.cookies || {}; // || {} введено для тех случаев если забыли например подключить cooke-parcer, тогда поля cookies в структуре req вообще будет отсутствовать и тогда undefined крашнет приложение
 
     if (!refreshToken) {
         return res.status(HttpStatus.Unauthorized).json({
@@ -34,19 +35,21 @@ export const refreshTokenGuard = async (
         return res.status(HttpStatus.Unauthorized).json({
             error: `Improper refresh token format. Missing userId in refresh token.`,
         });
-
     }
     // Несмотря на предупреждение, проверка в рантайме необходима, потому что:
     // 1. JWT‑токен может быть подделан или изменён;
     // 2. токен может быть создан другой версией сервиса с другой структурой;
     // 3. данные могут быть повреждены при передаче;
     // 4. тип в TypeScript существует только до компиляции — в JS‑коде он стирается.
-    if (typeof rawPayload.deviceId !== 'string') {
+    if (typeof rawPayload.deviceId !== "string") {
         return res.status(HttpStatus.Unauthorized).json({
             error: `Improper refresh token format. Invalid deviceId type in refresh token.`,
         });
     }
-    if (typeof rawPayload.iat !== 'number' || typeof rawPayload.exp !== 'number') {
+    if (
+        typeof rawPayload.iat !== "number" ||
+        typeof rawPayload.exp !== "number"
+    ) {
         return res.status(HttpStatus.Unauthorized).json({
             error: `Improper refresh token format. Invalid deviceId type in refresh token. Invalid iat/exp fields in refresh token.`,
         });
@@ -57,16 +60,25 @@ export const refreshTokenGuard = async (
     const decodedRefreshTokenData =
         await jwtService.decodeRefreshToken(refreshToken);
 
-        let sessionId: ObjectId | null;
+    let sessionId: ObjectId | null;
 
-    try{
+    // const sessionsList = await dataQueryRepository.utilGetAllSessionRecords();
+    // console.warn("SHOWING SESSIONS: ", sessionsList)
+
+    const iatToPass = new Date(decodedRefreshTokenData?.iat! * 1000);
+    const expToPass = new Date(decodedRefreshTokenData?.exp! * 1000);
+
+    try {
         sessionId = await dataCommandRepository.findSession(
             decodedRefreshTokenData?.userId!,
             decodedRefreshTokenData?.deviceId!,
-            new Date(decodedRefreshTokenData?.iat! * 1000),
-            new Date(decodedRefreshTokenData?.exp! * 1000),
+            expToPass as Date,
+            iatToPass as Date,
+            // new Date(decodedRefreshTokenData?.iat! * 1000),
+            // new Date(decodedRefreshTokenData?.exp! * 1000),
         );
 
+    // console.warn("!!!HERE!!!");
         if (!sessionId) {
             return res.status(HttpStatus.Unauthorized).json({
                 error: `Session doesnt exist or expired token`,
@@ -90,6 +102,5 @@ export const refreshTokenGuard = async (
     req.user = { userId: payload.userId };
     req.sessionId = sessionId!;
     req.deviceId = decodedRefreshTokenData?.deviceId;
-
     return next();
 };

@@ -376,7 +376,6 @@ export const authService = {
         sessionId: ObjectId,
     ): Promise<CustomResult<RotationPairToken>> {
         // const sessionData = await findSessionByPrimaryKey(sessionId);
-
         // формируем новые даты exp и iat
         const currentTimeMs = Date.now();
         // Преобразуем в секунды с округлением вниз
@@ -473,7 +472,6 @@ export const authService = {
 
         return ifLoggedOutSuccessfully;
     },
-
 
 
     // вспомогательная функция

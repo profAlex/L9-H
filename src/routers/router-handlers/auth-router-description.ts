@@ -139,6 +139,7 @@ export const refreshTokenOnDemand = async (req: Request, res: Response) => {
         req.user!.userId!,
         req.sessionId!,
     );
+    // console.warn("!!!HERE!!!");
 
     if (!pairOfTokens.data) {
         console.error(
