@@ -78,10 +78,13 @@ function runDB() {
         // } catch (error) {
         //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
         // }
-        yield exports.sessionsDataStorage.createIndex({ createdAt: 1 }, // поле для индексации
-        {
-            expireAfterSeconds: (20), // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
-        });
+        //
+        // await sessionsDataStorage.createIndex(
+        //     { createdAt: 1 }, // поле для индексации
+        //     {
+        //         expireAfterSeconds: 25, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+        //     },
+        // );
         // try {
         //     await sessionsDataStorage.dropIndex('dateOfRequest_1');
         // } catch (error) {
@@ -94,10 +97,15 @@ function runDB() {
         //     console.log( error); // Перебрасываем ошибку, если это не «индекс не найден»
         // }
         exports.requestsRestrictionDataStorage = db.collection(exports.REQUESTS_RESTRICTIONS_COLLECTION_NAME);
-        yield exports.requestsRestrictionDataStorage.createIndex({ dateOfRequest: 1 }, // поле для индексации
-        {
-            expireAfterSeconds: 11, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
-        });
+        // await requestsRestrictionDataStorage.createIndex(
+        //     { dateOfRequest: 1 }, // поле для индексации
+        //     {
+        //         expireAfterSeconds: 15, // считается в секундах, например: 24×60×60 = 86400 это будут одни сутки, а, например, 604 800 сек = 7 суток
+        //     },
+        // );
+        // Настройка индексов
+        yield setupCollectionIndexes(exports.sessionsDataStorage, 'sessions');
+        yield setupCollectionIndexes(exports.requestsRestrictionDataStorage, 'requests_restrictions');
         try {
             yield exports.client.connect();
             yield db.command({ ping: 1 });
@@ -121,6 +129,59 @@ function closeDB() {
         }
         catch (error) {
             console.error("Error: ", error);
+        }
+    });
+}
+function setupCollectionIndexes(collection, collectionName) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const indexesToSetup = [
+            {
+                field: "createdAt",
+                name: "createdAt_1",
+                ttl: 25,
+                description: `TTL index for ${collectionName} (25s)`,
+            },
+            {
+                field: "dateOfRequest",
+                name: "dateOfRequest_1",
+                ttl: 15,
+                description: `TTL index for ${collectionName} (15s)`,
+            },
+        ];
+        for (const indexConfig of indexesToSetup) {
+            try {
+                const existingIndexes = yield collection.indexes();
+                const existingIndex = existingIndexes.find((idx) => idx.name === indexConfig.name);
+                if (!existingIndex) {
+                    // Индекс не существует — создаём с нужными параметрами
+                    console.log(`Creating index ${indexConfig.name} for ${collectionName}`);
+                    yield collection.createIndex({ [indexConfig.field]: 1 }, {
+                        name: indexConfig.name,
+                        expireAfterSeconds: indexConfig.ttl,
+                    });
+                    console.log(`✓ Index ${indexConfig.name} created successfully`);
+                }
+                else if (existingIndex.expireAfterSeconds !== indexConfig.ttl) {
+                    // Индекс существует, но с другим TTL — обновляем
+                    console.log(`Updating index ${indexConfig.name}: TTL ${existingIndex.expireAfterSeconds} → ${indexConfig.ttl}`);
+                    // Удаляем старый индекс
+                    yield collection.dropIndex(indexConfig.name);
+                    // Создаём новый с правильным TTL
+                    yield collection.createIndex({ [indexConfig.field]: 1 }, {
+                        name: indexConfig.name,
+                        expireAfterSeconds: indexConfig.ttl,
+                    });
+                    console.log(`✓ Index ${indexConfig.name} updated successfully`);
+                }
+                else {
+                    // Индекс уже существует с правильными параметрами
+                    console.log(`ℹ️ Index ${indexConfig.name} already exists with correct TTL (${indexConfig.ttl}s)`);
+                }
+            }
+            catch (error) {
+                console.error(`❌ Error processing index ${indexConfig.name}:`, error);
+                throw error; // Перебрасываем ошибку для остановки инициализации при фатальной проблеме
+            }
         }
     });
 }
