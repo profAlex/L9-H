@@ -82,14 +82,13 @@ export const refreshTokenGuard = async (
         if (!sessionId) {
             return res.status(HttpStatus.Unauthorized).json({
                 error: `Session doesnt exist or expired token`,
-                requestData: `Request data: ${{
+                requestData: {
                     userId: decodedRefreshTokenData?.userId!,
                     deviceId: decodedRefreshTokenData?.deviceId!,
                     expToPass: expToPass as Date,
                     iatToPass: iatToPass as Date,
-                }}`,
-                metaData: `Objects inside Mongo: ${sessionsList}`,
-
+                },
+                metaData: sessionsList,
             });
         }
     } catch (error) {
