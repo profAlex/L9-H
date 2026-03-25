@@ -5,9 +5,7 @@ import { jwtService } from "../adapters/verification/jwt-service";
 import { CustomResult } from "../common/result-type/result-type";
 import { HttpStatus } from "../common/http-statuses/http-statuses";
 import { RegistrationUserInputModel } from "../routers/router-types/auth-registration-input-model";
-import {
-    dataCommandRepository,
-} from "../repository-layers/command-repository-layer/command-repository";
+import { dataCommandRepository } from "../repository-layers/command-repository-layer/command-repository";
 import { RegistrationConfirmationInput } from "../routers/router-types/auth-registration-confirmation-input-model";
 import { ResentRegistrationConfirmationInput } from "../routers/router-types/auth-resent-registration-confirmation-input-model";
 import { ObjectId } from "mongodb";
@@ -29,13 +27,11 @@ export const authService = {
         res: Response,
     ): Promise<CustomResult<RotationPairToken>> {
         const { loginOrEmail, password } = req.body;
-        // console.warn("PRE-FIND-BY?");
 
+        // проверяем что пользователь с указанным логином/емейлом уже существует в базе
         const user = await dataQueryRepository.findByLoginOrEmail(loginOrEmail);
 
-        // console.warn("USER?", user);
-        // console.warn("USER?", user?.login);
-        if (!user)
+        if (!user) {
             return {
                 data: null,
                 statusCode: HttpStatus.Unauthorized,
@@ -47,7 +43,9 @@ export const authService = {
                     },
                 ],
             };
+        }
 
+        // если существует - проверяем что пароль верен
         const isCorrectCredentials = await this.checkUserCredentials(
             password,
             user.passwordHash,
@@ -97,19 +95,8 @@ export const authService = {
         const sessionExp = tempSession.expiresAt;
         const sessionDeviceId = tempSession.deviceId;
 
-        // что еще надо:
-        // гарантировать iat и exp в пэйлоад jwt-token
-        // затем уже добавить TTL для хранилища сессий - это нужно для того чтобы удалять протухшие сессии к которым никто не обращался
-
-        // создать отдельные методы в dataCommandRepository для:
-        // - поиска имеющейся сессии
-        // - создания новой сессии
-        // - продления имеющейся сессии
-
         // здесь логика у нас следующая
         // - в любом случае создаем новую сессию со всеми присущими определенными идентификаторами и параметрами
-
-        // Во всех случаях возвращаем данные для создания пары токенов
 
         // создаем сессию в базе
         const isSuccessfulSessionCreated =
@@ -388,21 +375,21 @@ export const authService = {
         );
 
         // обновляем данные в базе сессий
-        const isSessionUpdated = await dataCommandRepository.updateSession(expiresAt, issuedAt, sessionId);
-        if(!isSessionUpdated) {
-            console.error(
-                "Couldn't update session data",
-            );
+        const isSessionUpdated = await dataCommandRepository.updateSession(
+            expiresAt,
+            issuedAt,
+            sessionId,
+        );
+        if (!isSessionUpdated) {
+            console.error("Couldn't update session data");
             return {
                 data: null,
                 statusCode: HttpStatus.InternalServerError,
-                statusDescription:
-                    "Couldn't update session data",
+                statusDescription: "Couldn't update session data",
                 errorsMessages: [
                     {
                         field: "authService -> refreshTokenOnDemand -> dataCommandRepository.updateSession(expiresAt, issuedAt, sessionId)",
-                        message:
-                            "Couldn't update session data",
+                        message: "Couldn't update session data",
                     },
                 ],
             };
@@ -467,11 +454,11 @@ export const authService = {
         //         refreshToken: oldRefreshToken,
         //         relatedUserId: relatedUserId,
         //     });
-        const ifLoggedOutSuccessfully = await dataCommandRepository.removeSessionBySessionId(sessionId);
+        const ifLoggedOutSuccessfully =
+            await dataCommandRepository.removeSessionBySessionId(sessionId);
 
         return ifLoggedOutSuccessfully;
     },
-
 
     // вспомогательная функция
     async checkUserCredentials(

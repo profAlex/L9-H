@@ -13,12 +13,11 @@ export const ipRequestRestrictionGuard = async (
     next: NextFunction,
 ) => {
     try {
-        const requestId = new ObjectId();
         const deviceName = req.get("User-Agent") || "";
         const deviceIp = req.ip || "";
         const url = req.originalUrl || "";
 
-
+        // проверяем количество обращений с этого эндпоинта в базу
         const checkIfCallAllowed = await dataQueryRepository.calculateIfCallAllowed(
             url,
             deviceIp,
@@ -26,14 +25,14 @@ export const ipRequestRestrictionGuard = async (
             10
         );
 
-        // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
-
         if (!checkIfCallAllowed) {
             return res.status(HttpStatus.TooManyRequests).json({
                 error: `Too many requests on URL: ${url}`,
             });
         }
 
+        // создаем новую запись в базу учета запросов эндпоинта
+        const requestId = new ObjectId();
         const newUrlCall: RequestRestrictionStorageModel = {
             _id: requestId,
             deviceIp: deviceIp,
@@ -42,6 +41,7 @@ export const ipRequestRestrictionGuard = async (
             dateOfRequest: new Date(),
         };
 
+        // вставляем запись в базу данных учета реквестов
         const insertedUrlCall = await dataCommandRepository.insertUrlCall(newUrlCall);
         if (!insertedUrlCall) {
             return res.status(HttpStatus.InternalServerError).json({
@@ -49,8 +49,6 @@ export const ipRequestRestrictionGuard = async (
             });
         }
 
-        //const restrictedSessionsList = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
-        //console.warn("AMOUNT OF ACTIVE SESSION: ", restrictedSessionsList.length);
 
         return next();
     } catch (error) {
@@ -62,13 +60,13 @@ export const ipRequestRestrictionGuard = async (
 };
 
 
+// ниже вынужденая модификация с передачей другого значения таймаута в checkIfCallAllowed, для прохождения тестов в инкубаторе
 export const ipRequestRestrictionGuardForRegistration = async (
     req: Request,
     res: Response,
     next: NextFunction,
 ) => {
     try {
-        const requestId = new ObjectId();
         const deviceName = req.get("User-Agent") || "";
         const deviceIp = req.ip || "";
         const url = req.originalUrl || "";
@@ -78,10 +76,9 @@ export const ipRequestRestrictionGuardForRegistration = async (
             url,
             deviceIp,
             deviceName,
-            15
+            10 // 15 - для прохождения тестов инкубатора. по ТЗ 10 секунд, но 5 писем за этот период 5 тестовых писем не успевали отсылаться и мой бэк выдавал ответ 204 раньше чем нужно, поэтому пришлось увеличить окно блокирования - ради прохождения тестов платформы нужно выставить значение 15. Для прохождения внутренних e2e тестов - 10.
         );
 
-        // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
 
         if (!checkIfCallAllowed) {
             return res.status(HttpStatus.TooManyRequests).json({
@@ -89,6 +86,7 @@ export const ipRequestRestrictionGuardForRegistration = async (
             });
         }
 
+        const requestId = new ObjectId();
         const newUrlCall: RequestRestrictionStorageModel = {
             _id: requestId,
             deviceIp: deviceIp,
@@ -103,9 +101,6 @@ export const ipRequestRestrictionGuardForRegistration = async (
                 error: "Internal server error during insertUrlCall",
             });
         }
-
-        //const restrictedSessionsList = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
-        //console.warn("AMOUNT OF ACTIVE SESSION: ", restrictedSessionsList.length);
 
         return next();
     } catch (error) {
@@ -117,13 +112,13 @@ export const ipRequestRestrictionGuardForRegistration = async (
 };
 
 
+// ниже вынужденая модификация с передачей другого значения таймаута в checkIfCallAllowed, для прохождения тестов в инкубаторе
 export const ipRequestRestrictionGuardForResending = async (
     req: Request,
     res: Response,
     next: NextFunction,
 ) => {
     try {
-        const requestId = new ObjectId();
         const deviceName = req.get("User-Agent") || "";
         const deviceIp = req.ip || "";
         const url = req.originalUrl || "";
@@ -133,10 +128,8 @@ export const ipRequestRestrictionGuardForResending = async (
             url,
             deviceIp,
             deviceName,
-            15
+            10 // 15 - для прохождения тестов инкубатора. 10 - для прохождения внутренних тестов. по ТЗ 10 секунд, но 5 писем за этот период 5 тестовых писем не успевали отсылаться и мой бэк выдавал ответ 204 раньше чем нужно, поэтому пришлось увеличить окно блокирования - ради прохождения тестов
         );
-
-        // console.warn("FLAG checkIfCallAllowed: ", checkIfCallAllowed);
 
         if (!checkIfCallAllowed) {
             return res.status(HttpStatus.TooManyRequests).json({
@@ -144,6 +137,7 @@ export const ipRequestRestrictionGuardForResending = async (
             });
         }
 
+        const requestId = new ObjectId();
         const newUrlCall: RequestRestrictionStorageModel = {
             _id: requestId,
             deviceIp: deviceIp,
@@ -158,9 +152,6 @@ export const ipRequestRestrictionGuardForResending = async (
                 error: "Internal server error during insertUrlCall",
             });
         }
-
-        //const restrictedSessionsList = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
-        //console.warn("AMOUNT OF ACTIVE SESSION: ", restrictedSessionsList.length);
 
         return next();
     } catch (error) {

@@ -14,6 +14,7 @@ import { UUIDgeneration } from "../src/adapters/randomUUIDgeneration/UUIDgenerat
 import { LoginInputModel } from "../src/routers/router-types/login-input-model";
 import jwt from "jsonwebtoken";
 import { envConfig } from "../src/config";
+import { RegistrationConfirmationInput } from "../src/routers/router-types/auth-registration-confirmation-input-model";
 
 describe("Test IP request restriction system", () => {
     const testApp = express();
@@ -151,7 +152,7 @@ describe("Test IP request restriction system", () => {
     //     // console.log(JSON.stringify(res.body));
     // });
 
-    it("POST '/api/auth/registration' - attempt to register via email (successful)", async () => {
+    it("POST '/api/auth/registration' - attempt to register via email (5 attempts successful, then 1 with 429 error)", async () => {
         expect(await dataQueryRepository.returnUsersAmount()).toBe(2);
 
         const arrayOfUserRegistrationData: RegistrationUserInputModel[] = [
@@ -159,7 +160,7 @@ describe("Test IP request restriction system", () => {
                 login: "new_login1",
                 email: "geniusb1@yandex.ru",
                 password: "new_password",
-            } as RegistrationUserInputModel,
+            },
             {
                 login: "new_login2",
                 email: "geniusb2@yandex.ru",
@@ -191,7 +192,8 @@ describe("Test IP request restriction system", () => {
         const delay = (ms: number) =>
             new Promise((resolve) => setTimeout(resolve, ms));
 
-        for (let i = 0; i < 5; i++) {
+        const numberOfTries = 5;
+        for (let i = 0; i < numberOfTries; i++) {
             const res = await request(testApp)
                 .post(`${AUTH_PATH}/registration`)
                 .set("User-Agent", "CustomUserAgentHeader/1.0")
@@ -204,7 +206,7 @@ describe("Test IP request restriction system", () => {
 
 
             await delay(1000); // задержка 1 секунда
-            console.log("COUNT: ", i);
+            console.log("COUNT TRIES: ", i);
         }
 
         expect(
@@ -234,7 +236,7 @@ describe("Test IP request restriction system", () => {
             mailerService.sendConfirmationRegisterEmail,
         ).toHaveBeenCalled();
 
-        await delay(5000); // задержка 1 секунда
+        await delay(5000); // задержка 5 секунд
 
         const res2 = await request(testApp)
             .post(`${AUTH_PATH}/registration`)
@@ -249,84 +251,61 @@ describe("Test IP request restriction system", () => {
         const restrictedSessionsList1 = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
         console.log("RESTRICTED SESSION STORAGE 2: ", restrictedSessionsList1);
 
-    }, 15000);
+    }, 25000);
 
 
-    // it("POST '/api/auth/registration' - attempt to register via email (not successful)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(3);
-    //
-    //     const newUserToRegisterViaEmail: RegistrationUserInputModel = {
-    //         login: "hello_wr",
-    //         email: "geniusb198@yandex.ru",
-    //         password: "new_password",
-    //     };
-    //
-    //     const newUserToRegisterViaEmail1: RegistrationUserInputModel = {
-    //         login: "hel_hel",
-    //         email: "test_email@yandex.com",
-    //         password: "new_password",
-    //     };
-    //
-    //     // попытка зарегистрироваться с уже имеющимся login
-    //     const res = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration`)
-    //         .send(newUserToRegisterViaEmail);
-    //
-    //     // попытка зарегистрироваться с уже имеющимся email
-    //     const res1 = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration`)
-    //         .send(newUserToRegisterViaEmail1);
-    //
-    //     // const mockedServiceCall = authService.registerNewUser;
-    //
-    //     expect(res.status).toBe(HttpStatus.BadRequest);
-    //     expect(res1.status).toBe(HttpStatus.BadRequest);
-    //     // expect(mailerService.sendConfirmationRegisterEmail)
-    //     // .toHaveBeenCalled();
-    //     expect(
-    //         mailerService.sendConfirmationRegisterEmail,
-    //     ).toHaveBeenCalledTimes(0);
-    // });
-    //
-    // it("POST '/api/auth/registration-confirmation' - attempt to confirm registration by sending and accepting registration code (successful)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(3);
-    //
-    //     const resentEmail: ResentRegistrationConfirmationInput = {
-    //         email: "geniusb198@yandex.ru",
-    //     };
-    //
-    //     const res = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration-email-resending`)
-    //         .send(resentEmail);
-    //
-    //     expect(res.status).toBe(HttpStatus.NoContent);
-    //
-    //     expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
-    //     expect(
-    //         mailerService.sendConfirmationRegisterEmail,
-    //     ).toHaveBeenCalledTimes(1);
-    // });
-    //
-    // it("POST '/api/auth/registration-confirmation' - attempt to confirm registration by sending and accepting registration code (not successful, cuz incorrect email)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(3);
-    //
-    //     const resentEmail: ResentRegistrationConfirmationInput = {
-    //         email: "tesssst_email@yandex.com",
-    //     };
-    //
-    //     const res = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration-email-resending`)
-    //         .send(resentEmail);
-    //
-    //     expect(res.status).toBe(HttpStatus.BadRequest);
-    //
-    //     expect(
-    //         mailerService.sendConfirmationRegisterEmail,
-    //     ).not.toHaveBeenCalled();
-    //     // expect(mailerService.sendConfirmationRegisterEmail)
-    //     //     .toHaveBeenCalledTimes(1);
-    // });
-    //
+    it("POST '/api/auth/registration-confirmation' - attempt to confirm registration by sending and accepting registration code (5 attempts successful, then 1 with 429 error) ", async () => {
+
+        const registrationCode: RegistrationConfirmationInput = {
+            code: "1-2-3-4-5-6" ,
+        };
+        const codeConfirmation = { code: "1-2-3-4-5-6" };
+
+        //изобретаем задержку на 1 секунду
+        const delay = (ms: number) =>
+            new Promise((resolve) => setTimeout(resolve, ms));
+
+        const numberOfTries = 5;
+        for (let i = 0; i < numberOfTries; i++) {
+            const res = await request(testApp)
+                .post(`${AUTH_PATH}/registration-confirmation`)
+                .send(registrationCode);
+
+            expect(res.status).toBe(HttpStatus.NoContent);
+            expect(
+                mailerService.sendConfirmationRegisterEmail,
+            ).toHaveBeenCalled();
+
+            await delay(1000); // задержка 1 секунда
+            console.log("COUNT TRIES: ", i);
+
+        }
+
+        expect(
+            mailerService.sendConfirmationRegisterEmail,
+        ).toHaveBeenCalledTimes(5);
+
+        // шестой вызов внутри 10-ти секундного интервала, должен будет вернуть ошибку
+        const res1 = await request(testApp)
+            .post(`${AUTH_PATH}/registration-confirmation`)
+            .send(registrationCode);
+
+        expect(res1.status).toBe(HttpStatus.TooManyRequests);
+        expect(
+            mailerService.sendConfirmationRegisterEmail,
+        ).not.toHaveBeenCalled();
+
+        await delay(5000); // задержка 5 секунд, чтобы перешагнуть 10-ти секундный барьер, после которого можно снова пробовать отсылать
+
+        const res2 = await request(testApp)
+            .post(`${AUTH_PATH}/registration-confirmation`)
+            .send(registrationCode);
+
+        expect(res2.status).toBe(HttpStatus.NoContent);
+        expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
+
+    }, 25000);
+
     // it("POST '/api/auth/registration-email-resending' - attempt to resend registration code (successful)", async () => {
     //     expect(await dataQueryRepository.returnUsersAmount()).toBe(3);
     //

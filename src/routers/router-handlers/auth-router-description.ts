@@ -35,6 +35,7 @@ export const attemptToLogin = async (
 
     const { accessToken, refreshToken, relatedUserId } = loginResult.data;
 
+    // записываем данные соданного рефреш-токена в объект res для передачи при возврате
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true });
 
     return res.status(HttpStatus.Ok).send({ accessToken: accessToken });
@@ -95,7 +96,10 @@ export const registrationAttemptByUser = async (
         req.body,
     );
 
-    if (registrationResult.statusCode !== HttpStatus.Ok && registrationResult.statusCode !== HttpStatus.NoContent) {
+    if (
+        registrationResult.statusCode !== HttpStatus.Ok &&
+        registrationResult.statusCode !== HttpStatus.NoContent
+    ) {
         // console.error(
         //     "Error description: ",
         //     registrationResult?.statusDescription,
