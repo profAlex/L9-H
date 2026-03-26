@@ -100,7 +100,7 @@ describe("Test IP request restriction system", () => {
         //     loginOrEmail: "wrong_log",
         //     password: "hello_world",
         // };
-    });
+    }, 10000);
 
     // it("POST '/api/auth/login' - successful login attempt (response 200)", async () => {
     //     expect(await dataQueryRepository.returnUsersAmount()).toBe(2);
@@ -152,7 +152,7 @@ describe("Test IP request restriction system", () => {
     //     // console.log(JSON.stringify(res.body));
     // });
 
-    it("POST '/api/auth/registration' - attempt to register via email (5 attempts successful, then 1 with 429 error)", async () => {
+    it("POST '/api/auth/registration' - attempt to register via email (5 attempts successful, then 1 with 429 error, then wait 5 sec, then last one successful attempt)", async () => {
         expect(await dataQueryRepository.returnUsersAmount()).toBe(2);
 
         const arrayOfUserRegistrationData: RegistrationUserInputModel[] = [
@@ -204,16 +204,16 @@ describe("Test IP request restriction system", () => {
                 mailerService.sendConfirmationRegisterEmail,
             ).toHaveBeenCalled();
 
-
             await delay(1000); // задержка 1 секунда
-            console.log("COUNT TRIES: ", i);
+            console.log("COUNT TRIES: ", i + 1);
         }
 
         expect(
             mailerService.sendConfirmationRegisterEmail,
         ).toHaveBeenCalledTimes(5);
 
-        const restrictedSessionsList = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
+        const restrictedSessionsList =
+            await dataQueryRepository.utilGetAllRestrictedSessionRecords();
         console.log("RESTRICTED SESSION STORAGE 1: ", restrictedSessionsList);
 
         const res = await request(testApp)
@@ -222,9 +222,7 @@ describe("Test IP request restriction system", () => {
             .send(arrayOfUserRegistrationData[5]);
 
         expect(res.status).toBe(HttpStatus.TooManyRequests);
-        expect(
-            mailerService.sendConfirmationRegisterEmail,
-        ).toHaveBeenCalled();
+        expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
 
         const res1 = await request(testApp)
             .post(`${AUTH_PATH}/registration`)
@@ -232,9 +230,7 @@ describe("Test IP request restriction system", () => {
             .send(arrayOfUserRegistrationData[5]);
 
         expect(res1.status).toBe(HttpStatus.TooManyRequests);
-        expect(
-            mailerService.sendConfirmationRegisterEmail,
-        ).toHaveBeenCalled();
+        expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
 
         await delay(5000); // задержка 5 секунд
 
@@ -244,22 +240,17 @@ describe("Test IP request restriction system", () => {
             .send(arrayOfUserRegistrationData[5]);
 
         expect(res2.status).toBe(HttpStatus.NoContent);
-        expect(
-            mailerService.sendConfirmationRegisterEmail,
-        ).toHaveBeenCalled();
+        expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
 
-        const restrictedSessionsList1 = await dataQueryRepository.utilGetAllRestrictedSessionRecords();
+        const restrictedSessionsList1 =
+            await dataQueryRepository.utilGetAllRestrictedSessionRecords();
         console.log("RESTRICTED SESSION STORAGE 2: ", restrictedSessionsList1);
-
     }, 25000);
 
-
-    it("POST '/api/auth/registration-confirmation' - attempt to confirm registration by sending and accepting registration code (5 attempts successful, then 1 with 429 error) ", async () => {
-
+    it("POST '/api/auth/registration-confirmation' - attempt to confirm registration by sending and accepting registration code (5 attempts successful, then 1 with 429 error, then wait 5 sec, then last one successful attempt) ", async () => {
         const registrationCode: RegistrationConfirmationInput = {
-            code: "1-2-3-4-5-6" ,
+            code: "1-2-3-4-5-6",
         };
-        const codeConfirmation = { code: "1-2-3-4-5-6" };
 
         //изобретаем задержку на 1 секунду
         const delay = (ms: number) =>
@@ -272,18 +263,10 @@ describe("Test IP request restriction system", () => {
                 .send(registrationCode);
 
             expect(res.status).toBe(HttpStatus.NoContent);
-            expect(
-                mailerService.sendConfirmationRegisterEmail,
-            ).toHaveBeenCalled();
 
             await delay(1000); // задержка 1 секунда
-            console.log("COUNT TRIES: ", i);
-
+            console.log("COUNT TRIES: ", i + 1);
         }
-
-        expect(
-            mailerService.sendConfirmationRegisterEmail,
-        ).toHaveBeenCalledTimes(5);
 
         // шестой вызов внутри 10-ти секундного интервала, должен будет вернуть ошибку
         const res1 = await request(testApp)
@@ -291,9 +274,6 @@ describe("Test IP request restriction system", () => {
             .send(registrationCode);
 
         expect(res1.status).toBe(HttpStatus.TooManyRequests);
-        expect(
-            mailerService.sendConfirmationRegisterEmail,
-        ).not.toHaveBeenCalled();
 
         await delay(5000); // задержка 5 секунд, чтобы перешагнуть 10-ти секундный барьер, после которого можно снова пробовать отсылать
 
@@ -302,291 +282,70 @@ describe("Test IP request restriction system", () => {
             .send(registrationCode);
 
         expect(res2.status).toBe(HttpStatus.NoContent);
+    }, 25000);
+
+
+    it("POST '/api/auth/registration-email-resending' - attempt to resend registration code (successful)", async () => {
+
+        const newUserRegistrationData: RegistrationUserInputModel = {
+            login: "new_login8",
+            email: "geniusb8@yandex.ru",
+            password: "new_password",
+        };
+
+        // создаем еще один тестовый аккаунт, на который будем отправлять емейл с кодами подтверждения
+        const resAdditinalLogin = await request(testApp)
+            .post(`${AUTH_PATH}/registration`)
+            .set("User-Agent", "CustomUserAgentHeader/7.0")
+            .send(newUserRegistrationData);
+
+        expect(resAdditinalLogin.status).toBe(HttpStatus.NoContent);
+        expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
+
+        const emailToResendRegistration: ResentRegistrationConfirmationInput = {
+            email: "geniusb8@yandex.ru",
+        };
+
+        //изобретаем задержку на 1 секунду
+        const delay = (ms: number) =>
+            new Promise((resolve) => setTimeout(resolve, ms));
+
+        const numberOfTries = 5;
+        for (let i = 0; i < numberOfTries; i++) {
+            const res = await request(testApp)
+                .post(`${AUTH_PATH}/registration-email-resending`)
+                .send(emailToResendRegistration);
+
+            expect(res.status).toBe(HttpStatus.NoContent);
+            expect(
+                mailerService.sendConfirmationRegisterEmail,
+            ).toHaveBeenCalled();
+
+            await delay(1000); // задержка 1 секунда
+            console.log("COUNT TRIES: ", i + 1);
+        }
+
+        expect(
+            mailerService.sendConfirmationRegisterEmail,
+        ).toHaveBeenCalledTimes(6);
+
+        // шестой вызов внутри 10-ти секундного интервала, должен будет вернуть ошибку
+        const res1 = await request(testApp)
+            .post(`${AUTH_PATH}/registration-email-resending`)
+            .send(emailToResendRegistration);
+
+        expect(res1.status).toBe(HttpStatus.TooManyRequests);
+        expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
+
+        await delay(5000); // задержка 5 секунд, чтобы перешагнуть 10-ти секундный барьер, после которого можно снова пробовать отсылать
+
+        // еще раз пробуем, после того как перешагнули порог 10-ти секунд
+        const res2 = await request(testApp)
+            .post(`${AUTH_PATH}/registration-email-resending`)
+            .send(emailToResendRegistration);
+
+        expect(res2.status).toBe(HttpStatus.NoContent);
         expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
 
     }, 25000);
-
-    // it("POST '/api/auth/registration-email-resending' - attempt to resend registration code (successful)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(3);
-    //
-    //     const newUserToRegisterViaEmail: RegistrationUserInputModel = {
-    //         login: "another",
-    //         email: "geniiusb198@yandex.ru",
-    //         password: "new_password",
-    //     };
-    //
-    //     const codeConfirmation = { code: "1-2-3-4-5-6" };
-    //
-    //     const registrationRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration`)
-    //         .send(newUserToRegisterViaEmail);
-    //
-    //     expect(registrationRes.status).toBe(HttpStatus.NoContent);
-    //     expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
-    //     expect(
-    //         mailerService.sendConfirmationRegisterEmail,
-    //     ).toHaveBeenCalledTimes(1);
-    //
-    //     const confirmationRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration-confirmation`)
-    //         .send(codeConfirmation);
-    //
-    //     expect(confirmationRes.status).toBe(HttpStatus.NoContent);
-    //     expect(UUIDgeneration.generateUUID).toHaveBeenCalled();
-    //     expect(UUIDgeneration.generateUUID).toHaveBeenCalledTimes(1);
-    // });
-    //
-    // it("POST '/api/auth/registration-email-resending' - attempt to resend registration code (not successful)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(4);
-    //
-    //     const newUserToRegisterViaEmail: RegistrationUserInputModel = {
-    //         login: "a1other",
-    //         email: "gentusb198@yandex.ru",
-    //         password: "new_password",
-    //     };
-    //
-    //     // пробуем неверный код подтверждения передать. Правильный: "1-2-3-4-5-6"
-    //     const wrongCodeConfirmation = { code: "2-2-3-4-5-6" };
-    //
-    //     const registrationRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration`)
-    //         .send(newUserToRegisterViaEmail);
-    //
-    //     expect(registrationRes.status).toBe(HttpStatus.NoContent);
-    //     expect(mailerService.sendConfirmationRegisterEmail).toHaveBeenCalled();
-    //     expect(
-    //         mailerService.sendConfirmationRegisterEmail,
-    //     ).toHaveBeenCalledTimes(1);
-    //
-    //     const confirmationRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/registration-confirmation`)
-    //         .send(wrongCodeConfirmation);
-    //
-    //     expect(confirmationRes.status).toBe(HttpStatus.BadRequest);
-    //     expect(UUIDgeneration.generateUUID).toHaveBeenCalled();
-    //     expect(UUIDgeneration.generateUUID).toHaveBeenCalledTimes(1);
-    // });
-    //
-    // //********************************************************************************
-    //
-    // it("POST '/api/auth/refresh-token' - attempt to refresh token (successful)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(5);
-    //
-    //     // это существующие креды, создавали в первом it
-    //     const loginData: LoginInputModel = {
-    //         loginOrEmail: "hello_wr",
-    //         password: "hello_world",
-    //     };
-    //
-    //     // Получаем текущие токены
-    //     const loginRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/login`)
-    //         .send(loginData);
-    //
-    //     expect(loginRes.status).toBe(HttpStatus.Ok);
-    //     expect(loginRes.body.accessToken).toBeDefined();
-    //     expect(loginRes.header["set-cookie"]).toBeDefined();
-    //     const setCookieValue = loginRes.header["set-cookie"];
-    //
-    //     let refreshTokenCookie: string | undefined;
-    //
-    //     if (Array.isArray(setCookieValue)) {
-    //         refreshTokenCookie = setCookieValue.find((cookie) =>
-    //             // имя куки refreshToken определено по ТЗ
-    //             cookie.startsWith("refreshToken="),
-    //         );
-    //     } else if (typeof setCookieValue === "string") {
-    //         refreshTokenCookie = setCookieValue.startsWith("refreshToken=")
-    //             ? setCookieValue
-    //             : undefined;
-    //     }
-    //
-    //     expect(refreshTokenCookie).toBeDefined();
-    //
-    //     // ниже блок функции для извлечения значения куки
-    //     const extractJwtFromCookie = (cookieString: string): string => {
-    //         // Разделяем строку по первому знаку '='
-    //         const parts = cookieString.split("=");
-    //         if (parts.length < 2) {
-    //             throw new Error('Invalid cookie format: no "=" found');
-    //         }
-    //
-    //         // Берём часть после '=' и до первого ';' (атрибуты куки)
-    //         const jwtWithAttributes = parts[1];
-    //         const jwt = jwtWithAttributes.split(";")[0];
-    //
-    //         return jwt;
-    //     };
-    //
-    //     if (!refreshTokenCookie) {
-    //         throw "Refresh cookie is undefined";
-    //     }
-    //
-    //     const refreshTokenValue = extractJwtFromCookie(refreshTokenCookie);
-    //     expect(refreshTokenValue).toMatch(
-    //         /^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$/,
-    //     ); // проверка формата JWT
-    //
-    //     console.log(refreshTokenCookie);
-    //
-    //     //изобретаем задержку на 1 секунду
-    //     const delay = (ms: number) =>
-    //         new Promise((resolve) => setTimeout(resolve, ms));
-    //     await delay(1000); // задержка 1 секунда
-    //     console.log("Прошла 1 секунда");
-    //
-    //     // Пытаемся обновить токены
-    //     const refreshRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/refresh-token`)
-    //         .set("Cookie", `refreshToken=${refreshTokenValue}`)
-    //         .send();
-    //
-    //     expect(refreshRes.status).toBe(HttpStatus.Ok);
-    //     expect(refreshRes.body.accessToken).toBeDefined();
-    //     expect(refreshRes.header["set-cookie"]).toBeDefined();
-    //     const setNewCookieValue = refreshRes.header["set-cookie"];
-    //
-    //     let refreshNewTokenCookie: string | undefined;
-    //
-    //     if (Array.isArray(setNewCookieValue)) {
-    //         refreshNewTokenCookie = setNewCookieValue.find((cookie) =>
-    //             // имя куки refreshToken определено по ТЗ
-    //             cookie.startsWith("refreshToken="),
-    //         );
-    //     } else if (typeof setNewCookieValue === "string") {
-    //         refreshNewTokenCookie = setNewCookieValue.startsWith(
-    //             "refreshToken=",
-    //         )
-    //             ? setCookieValue
-    //             : undefined;
-    //     }
-    //
-    //     expect(refreshNewTokenCookie).toBeDefined();
-    //
-    //     console.log(refreshNewTokenCookie);
-    //
-    //     expect(refreshRes.body.accessToken).not.toEqual(
-    //         loginRes.body.accessToken,
-    //     );
-    //     expect(refreshTokenCookie).not.toEqual(refreshNewTokenCookie);
-    // });
-    //
-    // it("POST '/api/auth/refresh-token' - attempt to refresh token with expired refresh token (not successful)", async () => {
-    //     // Создаём expired JWT
-    //     const expiredRefreshToken = jwt.sign(
-    //         {
-    //             userId_1,
-    //             iat: Math.floor(Date.now() / 1000),
-    //             exp: Math.floor(Date.now() / 1000 - 3600),
-    //         },
-    //         envConfig.refreshTokenSecret,
-    //     );
-    //
-    //     // Устанавливаем expired токен в куку
-    //     const refreshRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/refresh-token`)
-    //         .set("Cookie", `refreshToken=${expiredRefreshToken}`)
-    //         .send();
-    //
-    //     expect(refreshRes.status).toBe(HttpStatus.Unauthorized);
-    // });
-    //
-    // it("POST '/api/auth/refresh-token' - attempt to refresh token with malformed refresh token (not successful)", async () => {
-    //     const malformedRefreshToken = "invalid_token_format";
-    //
-    //     const refreshRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/refresh-token`)
-    //         .set("Cookie", `refreshToken=${malformedRefreshToken}`)
-    //         .send();
-    //
-    //     expect(refreshRes.status).toBe(HttpStatus.Unauthorized);
-    // });
-    //
-    // it("POST '/api/auth/logout' - attempt to logout (successful)", async () => {
-    //     expect(await dataQueryRepository.returnUsersAmount()).toBe(5);
-    //
-    //     const loginData: LoginInputModel = {
-    //         loginOrEmail: "hello_w2",
-    //         password: "hello_world",
-    //     };
-    //
-    //     // Логинимся, чтобы получить refresh token в куках
-    //     const loginRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/login`)
-    //         .send(loginData);
-    //
-    //     expect(loginRes.status).toBe(HttpStatus.Ok);
-    //     expect(loginRes.header["set-cookie"]).toBeDefined();
-    //
-    //     // Извлекаем refresh token из кук
-    //     const setCookieValue = loginRes.header["set-cookie"];
-    //     let refreshTokenCookie: string | undefined;
-    //
-    //     if (Array.isArray(setCookieValue)) {
-    //         refreshTokenCookie = setCookieValue.find((cookie) =>
-    //             cookie.startsWith("refreshToken="),
-    //         );
-    //     } else if (typeof setCookieValue === "string") {
-    //         refreshTokenCookie = setCookieValue.startsWith("refreshToken=")
-    //             ? setCookieValue
-    //             : undefined;
-    //     }
-    //
-    //     expect(refreshTokenCookie).toBeDefined();
-    //
-    //     // вспомогательная функция
-    //     const extractJwtFromCookie = (cookieString: string): string => {
-    //         const parts = cookieString.split("=");
-    //         if (parts.length < 2) {
-    //             throw new Error('Invalid cookie format: no "=" found');
-    //         }
-    //         const jwtWithAttributes = parts[1];
-    //         const jwt = jwtWithAttributes.split(";")[0];
-    //         return jwt;
-    //     };
-    //
-    //     if (!refreshTokenCookie) {
-    //         throw new Error("Refresh cookie is undefined");
-    //     }
-    //
-    //     const refreshTokenValue = extractJwtFromCookie(refreshTokenCookie);
-    //     expect(refreshTokenValue).toMatch(
-    //         /^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$/,
-    //     );
-    //
-    //     // Выполняем logout, передавая refresh token в куках
-    //     const logoutRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/logout`)
-    //         .set("Cookie", `refreshToken=${refreshTokenValue}`)
-    //         .send();
-    //
-    //     expect(logoutRes.status).toBe(HttpStatus.NoContent);
-    //
-    //     // Проверяем, что refresh token больше не действителен
-    //     const refreshResAfterLogout = await request(testApp)
-    //         .post(`${AUTH_PATH}/refresh-token`)
-    //         .set("Cookie", `refreshToken=${refreshTokenValue}`)
-    //         .send();
-    //
-    //     expect(refreshResAfterLogout.status).toBe(HttpStatus.Unauthorized);
-    // });
-    //
-    // it("POST '/api/auth/logout' - attempt to logout with invalid refresh token (not successful)", async () => {
-    //     const invalidRefreshToken = "invalid_refresh_token";
-    //
-    //     const logoutRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/logout`)
-    //         .set("Cookie", `refreshToken=${invalidRefreshToken}`)
-    //         .send();
-    //
-    //     expect(logoutRes.status).toBe(HttpStatus.Unauthorized);
-    // });
-    //
-    // it("POST '/api/auth/logout' - attempt to logout without refresh token (not successful)", async () => {
-    //     const logoutRes = await request(testApp)
-    //         .post(`${AUTH_PATH}/logout`)
-    //         .send(); // без кук
-    //
-    //     expect(logoutRes.status).toBe(HttpStatus.Unauthorized);
-    // });
 });

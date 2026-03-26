@@ -24,11 +24,9 @@ exports.authService = {
     loginUser(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { loginOrEmail, password } = req.body;
-            // console.warn("PRE-FIND-BY?");
+            // проверяем что пользователь с указанным логином/емейлом уже существует в базе
             const user = yield query_repository_1.dataQueryRepository.findByLoginOrEmail(loginOrEmail);
-            // console.warn("USER?", user);
-            // console.warn("USER?", user?.login);
-            if (!user)
+            if (!user) {
                 return {
                     data: null,
                     statusCode: http_statuses_1.HttpStatus.Unauthorized,
@@ -40,6 +38,8 @@ exports.authService = {
                         },
                     ],
                 };
+            }
+            // если существует - проверяем что пароль верен
             const isCorrectCredentials = yield this.checkUserCredentials(password, user.passwordHash);
             if (isCorrectCredentials === false) {
                 return {
@@ -76,16 +76,8 @@ exports.authService = {
             const sessionIat = tempSession.issuedAt;
             const sessionExp = tempSession.expiresAt;
             const sessionDeviceId = tempSession.deviceId;
-            // что еще надо:
-            // гарантировать iat и exp в пэйлоад jwt-token
-            // затем уже добавить TTL для хранилища сессий - это нужно для того чтобы удалять протухшие сессии к которым никто не обращался
-            // создать отдельные методы в dataCommandRepository для:
-            // - поиска имеющейся сессии
-            // - создания новой сессии
-            // - продления имеющейся сессии
             // здесь логика у нас следующая
             // - в любом случае создаем новую сессию со всеми присущими определенными идентификаторами и параметрами
-            // Во всех случаях возвращаем данные для создания пары токенов
             // создаем сессию в базе
             const isSuccessfulSessionCreated = yield command_repository_1.dataCommandRepository.createSession(tempSession);
             if (!isSuccessfulSessionCreated) {
@@ -150,7 +142,7 @@ exports.authService = {
                         statusDescription: "authService -> registerNewUser -> if(ifUserLoginExists)",
                         errorsMessages: [
                             {
-                                field: "login",
+                                field: "authService -> registerNewUser -> if(ifUserLoginExists)",
                                 message: "Email or Login already exists!!!",
                             },
                         ],

@@ -356,10 +356,10 @@ exports.dataQueryRepository = {
             return [];
         });
     },
-    calculateIfCallAllowed(url, deviceIp, deviceName) {
+    calculateIfCallAllowed(url, deviceIp, deviceName, timeout) {
         return __awaiter(this, void 0, void 0, function* () {
             // Определяем временную границу: сейчас минус 10 секунд
-            const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+            const tenSecondsAgo = new Date(Date.now() - timeout * 1000);
             try {
                 // Подсчитываем количество записей, соответствующих условиям:
                 // - calledURL совпадает с переданным URL
@@ -373,14 +373,19 @@ exports.dataQueryRepository = {
                     dateOfRequest: { $gte: tenSecondsAgo },
                 });
                 // Возвращаем true, если количество запросов <= 5 (вызов разрешён),
-                // false — если > 5 (вызов запрещён)
-                return count <= 5;
+                // false — если >= 5 (вызов запрещён)
+                return count < 5;
             }
             catch (error) {
                 console.error("Error while checking request restrictions:", error);
                 // В случае ошибки считаем, что вызов запрещён (fail‑safe)
                 return false;
             }
+        });
+    },
+    utilGetAllRestrictedSessionRecords() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield mongo_db_1.requestsRestrictionDataStorage.find({}).toArray();
         });
     },
     // *****************************

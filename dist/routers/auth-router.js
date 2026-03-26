@@ -15,9 +15,9 @@ exports.authRouter.post("/login", ip_request_restriction_guard_1.ipRequestRestri
 // Confirm registration
 exports.authRouter.post("/registration-confirmation", ip_request_restriction_guard_1.ipRequestRestrictionGuard, auth_router_general_middleware_validator_1.registrationConfirmationValidator, error_management_validation_middleware_1.inputErrorManagementMiddleware, auth_router_description_1.registrationConfirmation);
 // Registration in the system. Email with confirmation code will be send to passed email address
-exports.authRouter.post("/registration", ip_request_restriction_guard_1.ipRequestRestrictionGuard, UserInputModel_validation_middleware_1.userInputModelValidation, error_management_validation_middleware_1.inputErrorManagementMiddleware, auth_router_description_1.registrationAttemptByUser);
+exports.authRouter.post("/registration", ip_request_restriction_guard_1.ipRequestRestrictionGuardForRegistration, UserInputModel_validation_middleware_1.userInputModelValidation, error_management_validation_middleware_1.inputErrorManagementMiddleware, auth_router_description_1.registrationAttemptByUser);
 // Resend Registration confirmation email
-exports.authRouter.post("/registration-email-resending", ip_request_restriction_guard_1.ipRequestRestrictionGuard, auth_router_general_middleware_validator_1.registrationResentConfirmationValidator, error_management_validation_middleware_1.inputErrorManagementMiddleware, auth_router_description_1.resendRegistrationConfirmation);
+exports.authRouter.post("/registration-email-resending", ip_request_restriction_guard_1.ipRequestRestrictionGuardForResending, auth_router_general_middleware_validator_1.registrationResentConfirmationValidator, error_management_validation_middleware_1.inputErrorManagementMiddleware, auth_router_description_1.resendRegistrationConfirmation);
 // Get information about current user
 exports.authRouter.get("/me", access_token_guard_1.accessTokenGuard, auth_router_description_1.provideUserInfo);
 // Generate new pair of access and refresh tokens (in cookie client must send correct refreshToken that will be revoked after refreshing)

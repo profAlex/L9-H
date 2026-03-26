@@ -72,7 +72,7 @@ export const registrationConfirmation = async (
     const confirmationResult: CustomResult =
         await authService.confirmRegistrationCode(req.body);
 
-    if (confirmationResult.statusCode !== HttpStatus.Ok) {
+    if (confirmationResult.statusCode !== HttpStatus.NoContent) {
         console.error(
             "Error description: ",
             confirmationResult?.statusDescription,
@@ -123,7 +123,7 @@ export const resendRegistrationConfirmation = async (
     const resentConfirmationResult: CustomResult =
         await authService.resendConfirmRegistrationCode(req.body);
 
-    if (resentConfirmationResult.statusCode !== HttpStatus.Ok) {
+    if (resentConfirmationResult.statusCode !== HttpStatus.NoContent) {
         console.error(
             "Error description: ",
             resentConfirmationResult?.statusDescription,

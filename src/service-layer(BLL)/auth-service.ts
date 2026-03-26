@@ -315,6 +315,10 @@ export const authService = {
         sentData: ResentRegistrationConfirmationInput,
     ): Promise<CustomResult> {
         try {
+
+            // const allUsersList = await dataCommandRepository.findAllUsers();
+            // console.log("DEBUG: ", allUsersList);
+
             const isUserInDatabase =
                 await dataCommandRepository.findNotConfirmedByEmail(
                     sentData.email,

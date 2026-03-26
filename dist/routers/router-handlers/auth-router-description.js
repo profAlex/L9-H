@@ -22,6 +22,7 @@ const attemptToLogin = (req, res) => __awaiter(void 0, void 0, void 0, function*
             .send({ errorsMessages: loginResult.errorsMessages });
     }
     const { accessToken, refreshToken, relatedUserId } = loginResult.data;
+    // записываем данные соданного рефреш-токена в объект res для передачи при возврате
     res.cookie("refreshToken", refreshToken, { httpOnly: true, secure: true });
     return res.status(http_statuses_1.HttpStatus.Ok).send({ accessToken: accessToken });
 });
@@ -59,12 +60,14 @@ exports.registrationConfirmation = registrationConfirmation;
 const registrationAttemptByUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // const { loginOrEmail, password } = req.body;
     const registrationResult = yield auth_service_1.authService.registerNewUser(req.body);
-    if (registrationResult.statusCode !== http_statuses_1.HttpStatus.Ok) {
+    if (registrationResult.statusCode !== http_statuses_1.HttpStatus.Ok &&
+        registrationResult.statusCode !== http_statuses_1.HttpStatus.NoContent) {
         // console.error(
         //     "Error description: ",
         //     registrationResult?.statusDescription,
         //     JSON.stringify(registrationResult.errorsMessages)
         // );
+        console.warn(`"ERROR: ${registrationResult.statusCode} IN FIELD: ${registrationResult.errorsMessages[0].field} MESSAGE:  ${registrationResult.errorsMessages[0].message}`);
         return res
             .status(registrationResult.statusCode)
             .send({ errorsMessages: registrationResult.errorsMessages });

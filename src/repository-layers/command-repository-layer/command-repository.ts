@@ -850,26 +850,38 @@ export const dataCommandRepository = {
         sentConfirmationCode: RegistrationConfirmationInput,
     ): Promise<CustomResult> {
         try {
-            const searchResult = await usersCollection
-                .aggregate([
-                    {
-                        $match: {
-                            "emailConfirmation.confirmationCode":
-                                sentConfirmationCode.code,
-                            "emailConfirmation.expirationDate": {
-                                $gt: new Date(),
-                            },
-                            "emailConfirmation.isConfirmed": false,
-                        },
-                    },
-                    {
-                        $project: {
-                            _id: 1,
-                        },
-                    },
-                ])
-                .toArray();
+            // const searchResult = await usersCollection
+            //     .aggregate([
+            //         {
+            //             $match: {
+            //                 "emailConfirmation.confirmationCode":
+            //                     sentConfirmationCode.code,
+            //                 "emailConfirmation.expirationDate": {
+            //                     $gt: new Date(),
+            //                 },
+            //                 "emailConfirmation.isConfirmed": false,
+            //             },
+            //         },
+            //         {
+            //             $project: {
+            //                 _id: 1,
+            //             },
+            //         },
+            //     ])
+            //     .toArray();
 
+            const searchResult = await usersCollection.findOne(
+                {
+                    "emailConfirmation.confirmationCode": sentConfirmationCode.code,
+                    "emailConfirmation.expirationDate": { $gt: new Date() },
+                    "emailConfirmation.isConfirmed": false,
+                },
+                { projection: { _id: 1 } }
+            );
+
+
+
+            // console.log("ALL USERS: ", searchResult);
             // console.log(
             //     "ARRAY LENGTH HERE <-------------",
             //     searchResult.length
@@ -882,9 +894,9 @@ export const dataCommandRepository = {
 
             // aggregate() всегда возвращает массив!
 
-            if (searchResult.length === 1) {
+            if (searchResult) {
                 const updateResult = await usersCollection.updateOne(
-                    { _id: searchResult[0]._id },
+                    { _id: searchResult._id },
                     {
                         $set: {
                             "emailConfirmation.confirmationCode": null,
@@ -893,7 +905,7 @@ export const dataCommandRepository = {
                     },
                 );
 
-                if (updateResult.modifiedCount === 1) {
+                if (updateResult.acknowledged) {
                     return {
                         data: null,
                         statusCode: HttpStatus.NoContent,
@@ -1198,6 +1210,9 @@ export const dataCommandRepository = {
         }
     },
 
+    async findAllUsers(): Promise<UserCollectionStorageModel[]> {
+        return usersCollection.find({}).toArray();
+    },
     // *****************************
     // методы для управления сессиями, а также управления сущностью security devices
     // *****************************
